@@ -35,6 +35,7 @@ Also, I'm experimenting with Flutter and Dart, hopefully to understand more abou
 - 0.1.0 - 4/8/2023 - initial code.
 - 0.1.1 - 4/8/2023 - update db table structure (add book status).
 - 0.1.2 - 5/8/2023 - update db table structure (add date of purchase).
+- 0.1.3 - 5/8/2023 - words capitalization for keyboard in title and author field.
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.

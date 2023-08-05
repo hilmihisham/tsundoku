@@ -36,6 +36,14 @@ class _MainScreenState extends State<MainScreen> {
     _refreshBooks(); // load books when the app started
   }
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _authorController.dispose();
+    _datePurchaseController.dispose();
+    super.dispose();
+  }
+
   // creating a custom button for book status options
   Widget customBookStatusButton(String buttonName, int value, Color color) {
     return OutlinedButton(
@@ -44,31 +52,15 @@ class _MainScreenState extends State<MainScreen> {
           bookStatus = value;
         });
       },
-      // style: OutlinedButton.styleFrom(
-      //   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5,),
-      //   shape: RoundedRectangleBorder(
-      //     borderRadius: BorderRadius.circular(10.0),
-      //   ),
-      //   side: BorderSide(
-      //     width: (bookStatus == value) ? 2.0 : 0.5,
-      //     color: (bookStatus == value) ? color : Colors.grey,
-      //   ),
-      // ),
-      style: ButtonStyle(
-        side: MaterialStateProperty.resolveWith<BorderSide?>((Set<MaterialState> states) {
-          if (states.contains(MaterialState.pressed)) {
-            return BorderSide(
-              width: 2.0,
-              color: color,
-            );
-          }
-          else {
-            return const BorderSide(
-              width: 0.5,
-              color: Colors.grey,
-            );
-          }
-        }),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5,),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        side: BorderSide(
+          width: (bookStatus == value) ? 2.0 : 0.5,
+          color: (bookStatus == value) ? color : Colors.grey,
+        ),
       ),
       child: Stack(
         children: [
@@ -128,7 +120,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Title'),
+              decoration: const InputDecoration(labelText: 'Title',),
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
             ),
