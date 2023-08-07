@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:tsundoku/util/sql_helper.dart';
@@ -15,7 +17,7 @@ class _MainScreenState extends State<MainScreen> {
 
   bool _isLoading = true;
 
-  int bookStatus = 0;
+  int _bookStatus = 0;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
@@ -49,7 +51,21 @@ class _MainScreenState extends State<MainScreen> {
     return OutlinedButton(
       onPressed: () {
         setState(() {
-          bookStatus = value;
+          _bookStatus = value;
+        });
+
+        // a hack style of getting the button to update its color itself
+        // problem: i noticed the color only changed after tapping somewhere else after button was pressed
+        // solution: simulate that tapping somewhere else by code (pointer down, wait 2ms, pointer up) 
+        WidgetsBinding.instance!.handlePointerEvent(PointerDownEvent(
+          position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
+        ));
+        Timer(const Duration(milliseconds: 2), () { 
+          setState(() {
+            WidgetsBinding.instance!.handlePointerEvent(PointerUpEvent(
+              position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
+            ));
+          });
         });
       },
       style: OutlinedButton.styleFrom(
@@ -58,8 +74,8 @@ class _MainScreenState extends State<MainScreen> {
           borderRadius: BorderRadius.circular(10.0),
         ),
         side: BorderSide(
-          width: (bookStatus == value) ? 2.0 : 0.5,
-          color: (bookStatus == value) ? color : Colors.grey,
+          width: (_bookStatus == value) ? 2.0 : 0.5,
+          color: (_bookStatus == value) ? color : Colors.grey,
         ),
       ),
       child: Stack(
@@ -68,7 +84,7 @@ class _MainScreenState extends State<MainScreen> {
             child: Text(
               buttonName,
               style: TextStyle(
-                color: (bookStatus == value) ? color : Colors.grey,
+                color: (_bookStatus == value) ? color : Colors.grey,
               ),
             ),
           ),
@@ -88,7 +104,7 @@ class _MainScreenState extends State<MainScreen> {
       // erase any text in controller just in case modal bottom sheet was closed without any update made
       _titleController.text = '';
       _authorController.text = '';
-      bookStatus = 0;
+      _bookStatus = 0;
       _datePurchaseController.text = '';
     }
 
@@ -99,7 +115,7 @@ class _MainScreenState extends State<MainScreen> {
       print("existing book title = $existingBook");
       _titleController.text = existingBook['title'];
       _authorController.text = existingBook['author'];
-      bookStatus = int.parse(existingBook['status']);
+      _bookStatus = int.parse(existingBook['status']);
       _datePurchaseController.text = existingBook['datePurchase'];
     }
 
@@ -131,6 +147,7 @@ class _MainScreenState extends State<MainScreen> {
               controller: _authorController,
               decoration: const InputDecoration(labelText: 'Author'),
               textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
             ),
             const SizedBox(
               height: 10,
@@ -218,13 +235,13 @@ class _MainScreenState extends State<MainScreen> {
 
   // insert new book to db
   Future<void> _addItem() async {
-    await SQLHelper.inputBook(_titleController.text, _authorController.text, bookStatus.toString(), _datePurchaseController.text);
+    await SQLHelper.inputBook(_titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text);
     _refreshBooks();
   }
 
   // update existing book
   Future<void> _updateItem(int id) async {
-    await SQLHelper.updateBook(id, _titleController.text, _authorController.text, bookStatus.toString(), _datePurchaseController.text);
+    await SQLHelper.updateBook(id, _titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text);
     _refreshBooks();
   }
 
