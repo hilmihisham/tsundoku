@@ -15,9 +15,17 @@ class _MainScreenState extends State<MainScreen> {
   // all books
   List<Map<String, dynamic>> _books = [];
 
+  // books separate by status
+  // List<Map<String, dynamic>> _booksNew = [];
+  // List<Map<String, dynamic>> _booksReading = [];
+  // List<Map<String, dynamic>> _booksFinished = [];
+
   bool _isLoading = true;
 
   int _bookStatus = 0;
+  int _countBooksNew = 0;
+  int _countBooksReading = 0;
+  int _countBooksFinished = 0;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
@@ -25,9 +33,21 @@ class _MainScreenState extends State<MainScreen> {
 
   // fetch all data from db
   void _refreshBooks() async {
-    final data = await SQLHelper.getBooks();
+    //final data = await SQLHelper.getBooks();
+
+    final dataBooksNew = await SQLHelper.getBooksByStatus("0");
+    final dataBooksReading = await SQLHelper.getBooksByStatus("1");
+    final dataBooksFinished = await SQLHelper.getBooksByStatus("2");
+
+    _countBooksNew = dataBooksNew.length;
+    _countBooksReading = dataBooksReading.length;
+    _countBooksFinished = dataBooksFinished.length;
+
+    print("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
+
     setState(() {
-      _books = data;
+      //_books = data;
+      _books = dataBooksNew + dataBooksReading + dataBooksFinished;
       _isLoading = false;
     });
   }
@@ -57,12 +77,12 @@ class _MainScreenState extends State<MainScreen> {
         // a hack style of getting the button to update its color itself
         // problem: i noticed the color only changed after tapping somewhere else after button was pressed
         // solution: simulate that tapping somewhere else by code (pointer down, wait 2ms, pointer up) 
-        WidgetsBinding.instance!.handlePointerEvent(PointerDownEvent(
+        WidgetsBinding.instance.handlePointerEvent(PointerDownEvent(
           position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
         ));
         Timer(const Duration(milliseconds: 2), () { 
           setState(() {
-            WidgetsBinding.instance!.handlePointerEvent(PointerUpEvent(
+            WidgetsBinding.instance.handlePointerEvent(PointerUpEvent(
               position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
             ));
           });
@@ -292,7 +312,28 @@ class _MainScreenState extends State<MainScreen> {
             margin: const EdgeInsets.all(10),
             child: ListTile(
               title: Text(_books[index]['title']),
-              subtitle: Text(_books[index]['author'] + ' || ' + _books[index]['datePurchase']),
+              //subtitle: Text(_books[index]['author'] + ' || \u{1F4D6} ' + _books[index]['datePurchase'] + ' || \u{2714} '),
+              subtitle: ('2' != _books[index]['status'])
+                ? Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: _books[index]['author'] + '\n'),
+                        const WidgetSpan(child: Icon(Icons.shopify_sharp)),
+                        TextSpan(text: ' ${_books[index]['datePurchase']}'),
+                      ],
+                    ),
+                  )
+                : Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: _books[index]['author'] + '\n'),
+                        const WidgetSpan(child: Icon(Icons.shopify_sharp)),
+                        TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
+                        const WidgetSpan(child: Icon(Icons.done_all)),
+                        const TextSpan(text: ' 0000-00-00'),
+                      ],
+                    ),
+                  ),
               trailing: SizedBox(
                 width: 100,
                 child: Row(

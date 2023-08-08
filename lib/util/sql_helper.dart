@@ -16,7 +16,7 @@ class SQLHelper {
 
   // id: the id of a item
   // title, author, status, datePurchase: all about the book data
-  // status: 0 new, 1 reading, 2 completed
+  // status: 0 new, 1 reading, 2 finished
   // datePurchase: yyyy-MM-dd
   // dateCreated: the time that the item was created. It will be automatically handled by SQLite
 
@@ -51,7 +51,13 @@ class SQLHelper {
   // get all books
   static Future<List<Map<String, dynamic>>> getBooks() async {
     final db = await SQLHelper.db();
-    return db.query('books', orderBy: "id");
+    return db.query('books', orderBy: "status, datePurchase");
+  }
+
+  // get book list by status
+  static Future<List<Map<String, dynamic>>> getBooksByStatus(String status) async {
+    final db = await SQLHelper.db();
+    return db.query('books', where: "status = ?", whereArgs: [status], orderBy: "datePurchase");
   }
 
   // get a book by id
