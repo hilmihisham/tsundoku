@@ -33,21 +33,26 @@ class _MainScreenState extends State<MainScreen> {
 
   // fetch all data from db
   void _refreshBooks() async {
-    //final data = await SQLHelper.getBooks();
+    final data = await SQLHelper.getBooks();
 
-    final dataBooksNew = await SQLHelper.getBooksByStatus("0");
-    final dataBooksReading = await SQLHelper.getBooksByStatus("1");
-    final dataBooksFinished = await SQLHelper.getBooksByStatus("2");
+    // final dataBooksNew = await SQLHelper.getBooksByStatus("0");
+    // final dataBooksReading = await SQLHelper.getBooksByStatus("1");
+    // final dataBooksFinished = await SQLHelper.getBooksByStatus("2");
 
-    _countBooksNew = dataBooksNew.length;
-    _countBooksReading = dataBooksReading.length;
-    _countBooksFinished = dataBooksFinished.length;
+    final countNewBooks = await SQLHelper.getCountByStatus("0");
+    _countBooksNew = countNewBooks!;
+
+    final countReadingBooks = await SQLHelper.getCountByStatus("1");
+    _countBooksReading = countReadingBooks!;
+
+    final countFinishedBooks = await SQLHelper.getCountByStatus("2");
+    _countBooksFinished = countFinishedBooks!;
 
     print("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
 
     setState(() {
-      //_books = data;
-      _books = dataBooksNew + dataBooksReading + dataBooksFinished;
+      _books = data;
+      // _books = dataBooksNew + dataBooksReading + dataBooksFinished;
       _isLoading = false;
     });
   }
@@ -288,7 +293,7 @@ class _MainScreenState extends State<MainScreen> {
         result = Colors.amber;
         break;
       case "2":
-        result = Colors.green;
+        result = Colors.green.shade400;
         break;
     }
 
@@ -309,16 +314,18 @@ class _MainScreenState extends State<MainScreen> {
           itemCount: _books.length,
           itemBuilder:(context, index) => Card(
             color: bookListColor(_books[index]['status']),
-            margin: const EdgeInsets.all(10),
+            margin: const EdgeInsets.all(8.0),
             child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0,),
               title: Text(_books[index]['title']),
+              titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 17, color: Colors.black87,),
               //subtitle: Text(_books[index]['author'] + ' || \u{1F4D6} ' + _books[index]['datePurchase'] + ' || \u{2714} '),
               subtitle: ('2' != _books[index]['status'])
                 ? Text.rich(
                     TextSpan(
                       children: [
                         TextSpan(text: _books[index]['author'] + '\n'),
-                        const WidgetSpan(child: Icon(Icons.shopify_sharp)),
+                        const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
                         TextSpan(text: ' ${_books[index]['datePurchase']}'),
                       ],
                     ),
@@ -327,11 +334,12 @@ class _MainScreenState extends State<MainScreen> {
                     TextSpan(
                       children: [
                         TextSpan(text: _books[index]['author'] + '\n'),
-                        const WidgetSpan(child: Icon(Icons.shopify_sharp)),
+                        const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
                         TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
-                        const WidgetSpan(child: Icon(Icons.done_all)),
+                        const WidgetSpan(child: Icon(Icons.done_all, size: 18.0,)),
                         const TextSpan(text: ' 0000-00-00'),
                       ],
+                      //style: const TextStyle(color: Colors.blue)
                     ),
                   ),
               trailing: SizedBox(
@@ -352,6 +360,35 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.teal,),
+              child: Text(
+                'tsundoku\n積ん読',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.fiber_new_rounded, color: Colors.red,),
+              title: Text('$_countBooksNew new books!'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book_sharp, color: Colors.amber,),
+              title: Text('$_countBooksReading currently reading.'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.done_all_sharp, color: Colors.green,),
+              title: Text('$_countBooksFinished already finished!'),
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () => _showForm(null),

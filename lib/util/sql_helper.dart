@@ -66,6 +66,13 @@ class SQLHelper {
     return db.query('books', where: "id = ?", whereArgs: [id], limit: 1);
   }
 
+  // get count based on book status
+  static Future<int?> getCountByStatus(String status) async {
+    final db = await SQLHelper.db();
+    int? count = sql.Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM books WHERE status = $status'));
+    return count;
+  }
+
   // update a book by id
   static Future<int> updateBook(int id, String title, String? author, String? status, String? datePurchase) async {
     final db = await SQLHelper.db();
