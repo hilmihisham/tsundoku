@@ -40,6 +40,7 @@ Also, I'm experimenting with Flutter and Dart, hopefully to understand more abou
 - 0.1.5 - 8/8/2023 - order book list by status, update card subtitle to show date purchase
 - 0.1.6 - 8/8/2023 - get count of books by status using sql query, show it on the drawer
 - 0.1.7 - 9/8/2023 - add date complete UI if book status is finished
+- 0.1.8 - 9/8/2023 - update db table to include date complete field
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.

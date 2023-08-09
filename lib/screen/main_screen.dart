@@ -21,6 +21,7 @@ class _MainScreenState extends State<MainScreen> {
   // List<Map<String, dynamic>> _booksFinished = [];
 
   bool _isLoading = true;
+  bool _isForgotDateDone = false;
 
   int _bookStatus = 0;
   int _countBooksNew = 0;
@@ -71,6 +72,59 @@ class _MainScreenState extends State<MainScreen> {
     _datePurchaseController.dispose();
     _dateReadDoneController.dispose();
     super.dispose();
+  }
+
+  // create forgot button for finished reading date
+  Widget customForgotFinishedReadDateButton() {
+    return OutlinedButton(
+      onPressed: () {
+        setState(() {
+          _isForgotDateDone = !_isForgotDateDone;
+          _dateReadDoneController.text = '';
+        });
+
+        // a hack style of getting the button to update its color itself
+        // problem: i noticed the color only changed after tapping somewhere else after button was pressed
+        // solution: simulate that tapping somewhere else by code (pointer down, wait 2ms, pointer up) 
+        WidgetsBinding.instance.handlePointerEvent(PointerDownEvent(
+          position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
+        ));
+        Timer(const Duration(milliseconds: 2), () { 
+          setState(() {
+            WidgetsBinding.instance.handlePointerEvent(PointerUpEvent(
+              position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
+            ));
+          });
+        });
+
+        print('i forgot lol = $_isForgotDateDone');
+      },
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5,),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        side: BorderSide(
+          // width: 2.0,
+          // color: Colors.green,
+          width: (_isForgotDateDone) ? 2.0 : 0.5,
+          color: (_isForgotDateDone) ? Colors.green : Colors.grey,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Center(
+            child: Text(
+              'i forgot lol',
+              style: TextStyle(
+                // color: Colors.green,
+                color: (_isForgotDateDone) ? Colors.green : Colors.grey,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // creating a custom button for book status options
@@ -134,18 +188,20 @@ class _MainScreenState extends State<MainScreen> {
       _bookStatus = 0;
       _datePurchaseController.text = '';
       _dateReadDoneController.text = '';
+      _isForgotDateDone = false;
     }
 
     if (id != null) {
       // id != null -> update existing
       final existingBook = _books.firstWhere((element) => element['id'] == id);
 
-      print("existing book title = $existingBook");
+      print("existing book data = $existingBook");
       _titleController.text = existingBook['title'];
       _authorController.text = existingBook['author'];
       _bookStatus = int.parse(existingBook['status']);
       _datePurchaseController.text = existingBook['datePurchase'];
-      //_dateReadDoneController.text = existingBook['dateFinished'];
+      (existingBook['dateFinished'] == null) ? _dateReadDoneController.text = '' : _dateReadDoneController.text = existingBook['dateFinished'];
+      _isForgotDateDone = false;
     }
 
     showModalBottomSheet(
@@ -222,7 +278,7 @@ class _MainScreenState extends State<MainScreen> {
                 if (pickedDate != null) {
                   print(pickedDate);
                   String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate); // format date in required form here we use yyyy-MM-dd that means time is removed
-                  print(formattedDate); //formatted date output using intl package =>  2022-07-04
+                  print(formattedDate); //formatted date output using intl.dart package =>  2022-07-04
 
                   setState(() {
                     _datePurchaseController.text = formattedDate;
@@ -275,11 +331,35 @@ class _MainScreenState extends State<MainScreen> {
                   height: 0,
                 )
             ,
+            (_bookStatus == 2) // show date reading done picker if book status = finished
+              ? const SizedBox(
+                  height: 5,
+                )
+              : const SizedBox(
+                  height: 0,
+                )
+            ,
+            (_bookStatus == 2) // show forgot date reading done button if book status = finished
+              ? customForgotFinishedReadDateButton()
+              : const SizedBox(
+                  height: 0,
+                )
+            ,
             const SizedBox(
               height: 20,
             ),
             ElevatedButton(
               onPressed: () async {
+                
+                // if i forgot date finish is selected
+                if (_isForgotDateDone) {
+                  _dateReadDoneController.text = '';
+                }
+                else if ((_bookStatus == 2) && (_dateReadDoneController.text == '')) {
+                  // if book finished is selected, but date finished is not inputted, auto select today's date
+                  _dateReadDoneController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                  print('date finished auto set to ${_dateReadDoneController.text}');
+                }
                 // save new book
                 if (id == null) {
                   await _addItem();
@@ -293,6 +373,7 @@ class _MainScreenState extends State<MainScreen> {
                 _authorController.text = '';
                 _datePurchaseController.text = '';
                 _dateReadDoneController.text = '';
+                _isForgotDateDone = false;
 
                 // close bottom sheet
                 Navigator.of(context).pop();
@@ -307,13 +388,13 @@ class _MainScreenState extends State<MainScreen> {
 
   // insert new book to db
   Future<void> _addItem() async {
-    await SQLHelper.inputBook(_titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text);
+    await SQLHelper.inputBook(_titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text, _dateReadDoneController.text);
     _refreshBooks();
   }
 
   // update existing book
   Future<void> _updateItem(int id) async {
-    await SQLHelper.updateBook(id, _titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text);
+    await SQLHelper.updateBook(id, _titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text, _dateReadDoneController.text);
     _refreshBooks();
   }
 
@@ -384,7 +465,7 @@ class _MainScreenState extends State<MainScreen> {
                         const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
                         TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
                         const WidgetSpan(child: Icon(Icons.done_all, size: 18.0,)),
-                        const TextSpan(text: ' 0000-00-00'),
+                        TextSpan(text: ' ${_books[index]['dateFinished']}'),
                       ],
                       //style: const TextStyle(color: Colors.blue)
                     ),
