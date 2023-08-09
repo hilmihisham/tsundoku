@@ -77,6 +77,18 @@ class SQLHelper {
     return db.query('books', orderBy: "status, datePurchase, id");
   }
 
+  // get all books status 0 and 1
+  static Future<List<Map<String, dynamic>>> getBooksNewAndReading() async {
+    final db = await SQLHelper.db();
+    return db.rawQuery("SELECT * FROM books WHERE status IN ('0', '1') ORDER BY status, datePurchase, id");
+  }
+
+  // get all books status 2 order by earliest date finish first
+  static Future<List<Map<String, dynamic>>> getBooksInFinishedOrder() async {
+    final db = await SQLHelper.db();
+    return db.rawQuery("SELECT * FROM books WHERE status = '2' ORDER BY dateFinished DESC, datePurchase, id");
+  }
+
   // get book list by status
   static Future<List<Map<String, dynamic>>> getBooksByStatus(String status) async {
     final db = await SQLHelper.db();

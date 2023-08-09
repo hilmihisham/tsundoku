@@ -35,7 +35,10 @@ class _MainScreenState extends State<MainScreen> {
 
   // fetch all data from db
   void _refreshBooks() async {
-    final data = await SQLHelper.getBooks();
+    //final data = await SQLHelper.getBooks();
+
+    final dataNewAndReading = await SQLHelper.getBooksNewAndReading();
+    final dataFinished = await SQLHelper.getBooksInFinishedOrder();
 
     // final dataBooksNew = await SQLHelper.getBooksByStatus("0");
     // final dataBooksReading = await SQLHelper.getBooksByStatus("1");
@@ -53,7 +56,8 @@ class _MainScreenState extends State<MainScreen> {
     print("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
 
     setState(() {
-      _books = data;
+      //_books = data;
+      _books = dataNewAndReading + dataFinished;
       // _books = dataBooksNew + dataBooksReading + dataBooksFinished;
       _isLoading = false;
     });
@@ -309,14 +313,14 @@ class _MainScreenState extends State<MainScreen> {
                     DateTime? pickedDateDone = await showDatePicker(
                       context: context,
                       initialDate: (_dateReadDoneController.text != '') ? DateTime.parse(_dateReadDoneController.text) : DateTime.now(),
-                      firstDate: DateTime(1970),
+                      firstDate: (_datePurchaseController.text != '') ? DateTime.parse(_datePurchaseController.text) : DateTime(1970),
                       lastDate: DateTime(2100),
                     );
 
                     if (pickedDateDone != null) {
                       print(pickedDateDone);
                       String formattedDateDone = DateFormat('yyyy-MM-dd').format(pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
-                      print(formattedDateDone); //formatted date output using intl package =>  2022-07-04
+                      print(formattedDateDone); //formatted date output using intl.dart package =>  2022-07-04
 
                       setState(() {
                         _dateReadDoneController.text = formattedDateDone;
