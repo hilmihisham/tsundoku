@@ -51,7 +51,7 @@ class SQLHelper {
   // get all books
   static Future<List<Map<String, dynamic>>> getBooks() async {
     final db = await SQLHelper.db();
-    return db.query('books', orderBy: "status, datePurchase");
+    return db.query('books', orderBy: "status, datePurchase, id");
   }
 
   // get book list by status
