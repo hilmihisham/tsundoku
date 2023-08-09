@@ -30,6 +30,7 @@ class _MainScreenState extends State<MainScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
   final TextEditingController _datePurchaseController = TextEditingController();
+  final TextEditingController _dateReadDoneController = TextEditingController();
 
   // fetch all data from db
   void _refreshBooks() async {
@@ -68,6 +69,7 @@ class _MainScreenState extends State<MainScreen> {
     _titleController.dispose();
     _authorController.dispose();
     _datePurchaseController.dispose();
+    _dateReadDoneController.dispose();
     super.dispose();
   }
 
@@ -131,6 +133,7 @@ class _MainScreenState extends State<MainScreen> {
       _authorController.text = '';
       _bookStatus = 0;
       _datePurchaseController.text = '';
+      _dateReadDoneController.text = '';
     }
 
     if (id != null) {
@@ -142,6 +145,7 @@ class _MainScreenState extends State<MainScreen> {
       _authorController.text = existingBook['author'];
       _bookStatus = int.parse(existingBook['status']);
       _datePurchaseController.text = existingBook['datePurchase'];
+      //_dateReadDoneController.text = existingBook['dateFinished'];
     }
 
     showModalBottomSheet(
@@ -229,6 +233,48 @@ class _MainScreenState extends State<MainScreen> {
                 }
               },
             ),
+            (_bookStatus == 2) // show date reading done picker if book status = finished
+              ? const SizedBox(
+                  height: 10,
+                )
+              : const SizedBox(
+                  height: 0,
+                )
+            ,
+            (_bookStatus == 2) // show date reading done picker if book status = finished
+              ? TextField(
+                  controller: _dateReadDoneController,
+                  decoration: const InputDecoration(
+                    icon: Icon(Icons.done_all_sharp),
+                    labelText: "Date Reading Done!",
+                  ),
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDateDone = await showDatePicker(
+                      context: context,
+                      initialDate: (_dateReadDoneController.text != '') ? DateTime.parse(_dateReadDoneController.text) : DateTime.now(),
+                      firstDate: DateTime(1970),
+                      lastDate: DateTime(2100),
+                    );
+
+                    if (pickedDateDone != null) {
+                      print(pickedDateDone);
+                      String formattedDateDone = DateFormat('yyyy-MM-dd').format(pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
+                      print(formattedDateDone); //formatted date output using intl package =>  2022-07-04
+
+                      setState(() {
+                        _dateReadDoneController.text = formattedDateDone;
+                      });
+                    }
+                    else {
+                      print('Date not selected');
+                    }
+                  },
+                )
+              :  const SizedBox(
+                  height: 0,
+                )
+            ,
             const SizedBox(
               height: 20,
             ),
@@ -246,6 +292,7 @@ class _MainScreenState extends State<MainScreen> {
                 _titleController.text = '';
                 _authorController.text = '';
                 _datePurchaseController.text = '';
+                _dateReadDoneController.text = '';
 
                 // close bottom sheet
                 Navigator.of(context).pop();
