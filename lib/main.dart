@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tsundoku/screen/main_screen.dart';
+import 'package:tsundoku/screen/base_screen.dart';
+// import 'package:tsundoku/screen/home_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -17,7 +18,8 @@ class MainApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blueGrey,
       ),
-      home: const MainScreen(),
+      // home: const HomeScreen(),
+      home: const BaseScreen(),
     );
   }
 }
