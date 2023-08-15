@@ -1,7 +1,11 @@
-import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
@@ -24,9 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // List<Map<String, dynamic>> _booksFinished = [];
 
   bool _isLoading = true;
-  // bool _isForgotDateDone = false;
 
-  // int _bookStatus = 0;
   int _countBooksNew = 0;
   int _countBooksReading = 0;
   int _countBooksFinished = 0;
@@ -56,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final countFinishedBooks = await SQLHelper.getCountByStatus("2");
     _countBooksFinished = countFinishedBooks!;
 
-    print("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
+    debugPrint("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
 
     setState(() {
       //_books = data;
@@ -81,330 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // // create forgot button for finished reading date
-  // Widget customForgotFinishedReadDateButton() {
-  //   return OutlinedButton(
-  //     onPressed: () {
-  //       setState(() {
-  //         _isForgotDateDone = !_isForgotDateDone;
-  //         _dateReadDoneController.text = '';
-  //       });
-
-  //       // a hack style of getting the button to update its color itself
-  //       // problem: i noticed the color only changed after tapping somewhere else after button was pressed
-  //       // solution: simulate that tapping somewhere else by code (pointer down, wait 2ms, pointer up) 
-  //       WidgetsBinding.instance.handlePointerEvent(PointerDownEvent(
-  //         position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
-  //       ));
-  //       Timer(const Duration(milliseconds: 2), () { 
-  //         setState(() {
-  //           WidgetsBinding.instance.handlePointerEvent(PointerUpEvent(
-  //             position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
-  //           ));
-  //         });
-  //       });
-
-  //       print('i forgot lol = $_isForgotDateDone');
-  //     },
-  //     style: OutlinedButton.styleFrom(
-  //       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5,),
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(10.0),
-  //       ),
-  //       side: BorderSide(
-  //         // width: 2.0,
-  //         // color: Colors.green,
-  //         width: (_isForgotDateDone) ? 2.0 : 0.5,
-  //         color: (_isForgotDateDone) ? Colors.green : Colors.grey,
-  //       ),
-  //     ),
-  //     child: Stack(
-  //       children: [
-  //         Center(
-  //           child: Text(
-  //             'i forgot lol',
-  //             style: TextStyle(
-  //               // color: Colors.green,
-  //               color: (_isForgotDateDone) ? Colors.green : Colors.grey,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // // creating a custom button for book status options
-  // Widget customBookStatusButton(String buttonName, int value, Color color) {
-  //   return OutlinedButton(
-  //     onPressed: () {
-  //       setState(() {
-  //         _bookStatus = value;
-  //       });
-
-  //       // a hack style of getting the button to update its color itself
-  //       // problem: i noticed the color only changed after tapping somewhere else after button was pressed
-  //       // solution: simulate that tapping somewhere else by code (pointer down, wait 2ms, pointer up) 
-  //       WidgetsBinding.instance.handlePointerEvent(PointerDownEvent(
-  //         position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
-  //       ));
-  //       Timer(const Duration(milliseconds: 2), () { 
-  //         setState(() {
-  //           WidgetsBinding.instance.handlePointerEvent(PointerUpEvent(
-  //             position: Offset((MediaQuery.of(context).size.width)/2, (MediaQuery.of(context).size.height)-20),
-  //           ));
-  //         });
-  //       });
-  //     },
-  //     style: OutlinedButton.styleFrom(
-  //       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5,),
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(10.0),
-  //       ),
-  //       side: BorderSide(
-  //         width: (_bookStatus == value) ? 2.0 : 0.5,
-  //         color: (_bookStatus == value) ? color : Colors.grey,
-  //       ),
-  //     ),
-  //     child: Stack(
-  //       children: [
-  //         Center(
-  //           child: Text(
-  //             buttonName,
-  //             style: TextStyle(
-  //               color: (_bookStatus == value) ? color : Colors.grey,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // // method that will trigger when press floating button / update item
-  // void _showForm(int? id) async {
-
-  //   print("_showForm clicked, id = $id");
-
-  //   if (id == null) {
-  //     // id == null -> create new item
-
-  //     // erase any text in controller just in case modal bottom sheet was closed without any update made
-  //     _titleController.text = '';
-  //     _authorController.text = '';
-  //     _bookStatus = 0;
-  //     _datePurchaseController.text = '';
-  //     _dateReadDoneController.text = '';
-  //     _isForgotDateDone = false;
-  //   }
-
-  //   if (id != null) {
-  //     // id != null -> update existing
-  //     final existingBook = _books.firstWhere((element) => element['id'] == id);
-
-  //     print("existing book data = $existingBook");
-  //     _titleController.text = existingBook['title'];
-  //     _authorController.text = existingBook['author'];
-  //     _bookStatus = int.parse(existingBook['status']);
-  //     _datePurchaseController.text = existingBook['datePurchase'];
-  //     (existingBook['dateFinished'] == null) ? _dateReadDoneController.text = '' : _dateReadDoneController.text = existingBook['dateFinished'];
-  //     _isForgotDateDone = false;
-  //   }
-
-  //   showModalBottomSheet(
-  //     context: context, 
-  //     elevation: 5,
-  //     isScrollControlled: true,
-  //     builder: (_) => Container(
-  //       padding: EdgeInsets.only(
-  //         top: 15,
-  //         left: 15,
-  //         right: 15,
-  //         bottom: MediaQuery.of(context).viewInsets.bottom + 20, // preventing soft keyboard from covering text fields
-  //       ),
-  //       child: Column(
-  //         mainAxisSize: MainAxisSize.min,
-  //         crossAxisAlignment: CrossAxisAlignment.end,
-  //         children: [
-  //           TextField(
-  //             controller: _titleController,
-  //             decoration: const InputDecoration(labelText: 'Title',),
-  //             textCapitalization: TextCapitalization.words,
-  //             textInputAction: TextInputAction.next,
-  //           ),
-  //           const SizedBox(
-  //             height: 10,
-  //           ),
-  //           TextField(
-  //             controller: _authorController,
-  //             decoration: const InputDecoration(labelText: 'Author'),
-  //             textCapitalization: TextCapitalization.words,
-  //             textInputAction: TextInputAction.done,
-  //           ),
-  //           const SizedBox(
-  //             height: 10,
-  //           ),
-  //           Row(
-  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //             children: [
-  //               Expanded(
-  //                 child: customBookStatusButton('New Book!', 0, Colors.red),
-  //               ),
-  //               const SizedBox(
-  //                 width: 10,
-  //               ),
-  //               Expanded(
-  //                 child: customBookStatusButton('Reading', 1, Colors.amber),
-  //               ),
-  //               const SizedBox(
-  //                 width: 10,
-  //               ),
-  //               Expanded(
-  //                 child: customBookStatusButton('Finished', 2, Colors.green),
-  //               ),
-  //             ],
-  //           ),
-  //           const SizedBox(
-  //             height: 10,
-  //           ),
-  //           TextField(
-  //             controller: _datePurchaseController,
-  //             decoration: const InputDecoration(
-  //               icon: Icon(Icons.calendar_today),
-  //               labelText: "Date of Purchase",
-  //             ),
-  //             readOnly: true,
-  //             onTap: () async {
-  //               DateTime? pickedDate = await showDatePicker(
-  //                 context: context,
-  //                 initialDate: (_datePurchaseController.text != '') ? DateTime.parse(_datePurchaseController.text) : DateTime.now(),
-  //                 firstDate: DateTime(1970),
-  //                 lastDate: DateTime(2100),
-  //               );
-
-  //               if (pickedDate != null) {
-  //                 print(pickedDate);
-  //                 String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate); // format date in required form here we use yyyy-MM-dd that means time is removed
-  //                 print(formattedDate); //formatted date output using intl.dart package =>  2022-07-04
-
-  //                 setState(() {
-  //                   _datePurchaseController.text = formattedDate;
-  //                 });
-  //               }
-  //               else {
-  //                 print('Date not selected');
-  //               }
-  //             },
-  //           ),
-  //           (_bookStatus == 2) // show date reading done picker if book status = finished
-  //             ? const SizedBox(
-  //                 height: 10,
-  //               )
-  //             : const SizedBox(
-  //                 height: 0,
-  //               )
-  //           ,
-  //           (_bookStatus == 2) // show date reading done picker if book status = finished
-  //             ? TextField(
-  //                 controller: _dateReadDoneController,
-  //                 decoration: const InputDecoration(
-  //                   icon: Icon(Icons.done_all_sharp),
-  //                   labelText: "Date Reading Done!",
-  //                 ),
-  //                 readOnly: true,
-  //                 onTap: () async {
-  //                   DateTime? pickedDateDone = await showDatePicker(
-  //                     context: context,
-  //                     initialDate: (_dateReadDoneController.text != '') ? DateTime.parse(_dateReadDoneController.text) : DateTime.now(),
-  //                     firstDate: (_datePurchaseController.text != '') ? DateTime.parse(_datePurchaseController.text) : DateTime(1970),
-  //                     lastDate: DateTime(2100),
-  //                   );
-
-  //                   if (pickedDateDone != null) {
-  //                     print(pickedDateDone);
-  //                     String formattedDateDone = DateFormat('yyyy-MM-dd').format(pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
-  //                     print(formattedDateDone); //formatted date output using intl.dart package =>  2022-07-04
-
-  //                     setState(() {
-  //                       _dateReadDoneController.text = formattedDateDone;
-  //                     });
-  //                   }
-  //                   else {
-  //                     print('Date not selected');
-  //                   }
-  //                 },
-  //               )
-  //             :  const SizedBox(
-  //                 height: 0,
-  //               )
-  //           ,
-  //           (_bookStatus == 2) // show date reading done picker if book status = finished
-  //             ? const SizedBox(
-  //                 height: 5,
-  //               )
-  //             : const SizedBox(
-  //                 height: 0,
-  //               )
-  //           ,
-  //           (_bookStatus == 2) // show forgot date reading done button if book status = finished
-  //             ? customForgotFinishedReadDateButton()
-  //             : const SizedBox(
-  //                 height: 0,
-  //               )
-  //           ,
-  //           const SizedBox(
-  //             height: 20,
-  //           ),
-  //           ElevatedButton(
-  //             onPressed: () async {
-                
-  //               // if i forgot date finish is selected
-  //               if (_isForgotDateDone) {
-  //                 _dateReadDoneController.text = '';
-  //               }
-  //               else if ((_bookStatus == 2) && (_dateReadDoneController.text == '')) {
-  //                 // if book finished is selected, but date finished is not inputted, auto select today's date
-  //                 _dateReadDoneController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
-  //                 print('date finished auto set to ${_dateReadDoneController.text}');
-  //               }
-  //               // save new book
-  //               if (id == null) {
-  //                 await _addItem();
-  //               }
-  //               if (id != null) {
-  //                 await _updateItem(id);
-  //               }
-
-  //               // clear text fields
-  //               _titleController.text = '';
-  //               _authorController.text = '';
-  //               _datePurchaseController.text = '';
-  //               _dateReadDoneController.text = '';
-  //               _isForgotDateDone = false;
-
-  //               // close bottom sheet
-  //               Navigator.of(context).pop();
-  //             }, 
-  //             child: Text(id == null ? 'Add New Book' : 'Update'),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // // insert new book to db
-  // Future<void> _addItem() async {
-  //   await SQLHelper.inputBook(_titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text, _dateReadDoneController.text);
-  //   _refreshBooks();
-  // }
-
-  // // update existing book
-  // Future<void> _updateItem(int id) async {
-  //   await SQLHelper.updateBook(id, _titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text, _dateReadDoneController.text);
-  //   _refreshBooks();
-  // }
-
   // delete a book
   void _deleteItem(int id, String title) async {
     await SQLHelper.deleteBook(id);
@@ -413,6 +91,17 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text('Book $title is deleted.'),
       ),
     );
+    _refreshBooks();
+  }
+
+  // delete and re-add books from imported csv
+  void _deleteAllAndAddBooks(List<List> listFromCsv) async {
+    int deleteCount = await SQLHelper.deleteAllBooks();
+    debugPrint('all $deleteCount books deleted');
+
+    int lastIdInserted = await SQLHelper.insertMultiple(listFromCsv);
+    debugPrint('last id inserted = $lastIdInserted');
+
     _refreshBooks();
   }
 
@@ -433,6 +122,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return result;
+  }
+
+  Widget alertForOverwrite() {
+    return AlertDialog(
+      title: const Text('Import from CSV'),
+      content: const Text('Current book list is not empty in the database. Overwrite the list?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'Cancel'),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'OK'),
+          child: const Text('OK'),
+        ),
+      ],
+    );
   }
 
   @override
@@ -529,6 +235,105 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.done_all_sharp, color: Colors.green,),
               title: Text('$_countBooksFinished already finished!'),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 5.0),
+              child: ElevatedButton(
+                child: const Text('Export to CSV'),
+                onPressed: () async {
+                  debugPrint('export to csv clicked');
+                  List<List<String>> booksList = [];
+                  final sortedBooksList = await SQLHelper.getBooks();
+
+                  // convert book list to type usable for csv
+                  for (var i = 0; i < sortedBooksList.length; i++) {
+                    List<String> oneBookData = [
+                      sortedBooksList[i]['id'].toString(),
+                      sortedBooksList[i]['title'],
+                      sortedBooksList[i]['author'],
+                      sortedBooksList[i]['status'],
+                      sortedBooksList[i]['datePurchase'],
+                      sortedBooksList[i]['dateFinished']
+                    ];
+                    booksList.add(oneBookData);
+                  }
+                  debugPrint('booksList = $booksList');
+                  String csvData = const ListToCsvConverter().convert(booksList);
+                  // debugPrint('csvData = $csvData');
+
+                  // get path to export csv to
+                  final String exportDir = (await getExternalStorageDirectory())!.path;
+                  final String exportPath = "$exportDir/csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
+                  debugPrint('exportPath = $exportPath');
+                  
+                  // write the csv file
+                  final File file = File(exportPath);
+                  await file.writeAsString(csvData);
+
+                  // show snack bar with path to exported file
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('All books data is exported at $exportPath'),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15.0, 0.0, 15.0, 15.0),
+              child: ElevatedButton(
+                child: const Text('Import from CSV'),
+                onPressed: () async {
+                  // open file picker
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(
+                    allowedExtensions: ['csv'],
+                    type: FileType.custom,
+                  );
+
+                  if (result == null) {
+                    // user cancel selecting file
+                    debugPrint('file picking cancelled');
+                  }
+                  else {
+                    String? path = result.files.first.path;
+                    debugPrint('selected file path = $path');
+
+                    // get file
+                    final csvFile = File(path!).openRead();
+
+                    // convert csv to list
+                    List<List> listFromCsv = await csvFile.transform(utf8.decoder).transform(const CsvToListConverter()).toList();
+                    debugPrint('list from csv = $listFromCsv');
+
+                    // if _books not null (got existing records) show alert dialog to add or overwrite
+                    var overwriteConfirm = 'Cancel';
+                    if (_books.isNotEmpty) {
+                      overwriteConfirm = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => alertForOverwrite(),));
+                    }
+                    debugPrint('overwrite confirm = $overwriteConfirm');
+
+                    // add csv books into db
+                    if ('Cancel'.compareTo(overwriteConfirm) == 0) {
+                      // show snack bar for confirmation
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Import cancelled. Books data won\'t be overwrite.'),
+                        ),
+                      );
+                    }
+                    else {
+                      // do db works
+                      _deleteAllAndAddBooks(listFromCsv);
+                      // show snack bar for confirmation
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Import completed. Books data has been updated.'),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            )
           ],
         ),
       ),
@@ -536,14 +341,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.add),
         // onPressed: () => _showForm(null),
         onPressed: () async {
-          // Navigator.of(context).push(
-          //   MaterialPageRoute(
-          //     builder: (BuildContext context) {
-          //       return const AddBookScreen(id: null, book: null,);
-          //     },
-          //   ),
-          // );
-
           var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
 
           // to rebuild the screen if navigator pop returns true

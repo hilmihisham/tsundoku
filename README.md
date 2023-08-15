@@ -43,6 +43,7 @@ Also, I'm experimenting with Flutter and Dart, hopefully to understand more abou
 - 0.1.8 - 9/8/2023 - update db table to include date complete field
 - 0.1.9 - 9/8/2023 - sort completed books by earliest date completed first, limit date picking for completed to not be earlier than date purchase
 - 0.2.0 - 11/8/2023 - move add/edit books from bottom sheet to new page 
+- 0.3.0 - 15/8/2023 - add export to csv, import from csv
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.

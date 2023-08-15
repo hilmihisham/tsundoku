@@ -36,6 +36,7 @@ class SQLHelper {
   // status: 0 new, 1 reading, 2 finished
   // datePurchase: yyyy-MM-dd
   // dateCreated: the time that the item was created. It will be automatically handled by SQLite
+  // dateFinished: yyyy-MM-dd
 
   static Future<sql.Database> db() async {
     return sql.openDatabase(
@@ -71,10 +72,40 @@ class SQLHelper {
     return id;
   }
 
+  // insert multiple books
+  static Future<int> insertMultiple(List<List> books) async {
+    final db = await SQLHelper.db();
+
+    var buffer = StringBuffer();
+    for (var book in books) { 
+      if (buffer.isNotEmpty) {
+        buffer.write(",\n");
+      }
+      // buffer.write = ('id', 'title', 'author', 'status', 'date purchase', 'date finished')
+      buffer.write("('");
+      buffer.write(book.elementAt(0)); // id
+      buffer.write("', '");
+      buffer.write(book.elementAt(1)); // title
+      buffer.write("', '");
+      buffer.write(book.elementAt(2)); // author
+      buffer.write("', '");
+      buffer.write(book.elementAt(3)); // status
+      buffer.write("', '");
+      buffer.write(book.elementAt(4)); // date purchase
+      buffer.write("', '");
+      buffer.write(book.elementAt(5)); // date finished
+      buffer.write("')");
+    }
+    debugPrint('buffer = $buffer');
+
+    var raw = await db.rawInsert("INSERT INTO books (id, title, author, status, datePurchase, dateFinished) VALUES ${buffer.toString()}");
+    return raw;
+  }
+
   // get all books
   static Future<List<Map<String, dynamic>>> getBooks() async {
     final db = await SQLHelper.db();
-    return db.query('books', orderBy: "status, datePurchase, id");
+    return db.query('books', orderBy: "id");
   }
 
   // get all books status 0 and 1
@@ -133,6 +164,18 @@ class SQLHelper {
     } catch (e) {
       debugPrint("Error deleting a book: $e");
     }
+  }
+
+  // delete all books from table
+  static Future<int> deleteAllBooks() async {
+    final db = await SQLHelper.db();
+    int result = 0;
+    try {
+      result = await db.delete("books");
+    } catch (e) {
+      debugPrint("Error deleting all books: $e");
+    }
+    return result;
   }
 
 }
