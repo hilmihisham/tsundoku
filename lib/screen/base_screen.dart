@@ -6,11 +6,11 @@ class BaseScreen extends StatefulWidget {
   const BaseScreen({Key? key}) : super(key: key);
 
   @override
-  _BaseScreenState createState() => _BaseScreenState();
+  State<BaseScreen> createState() => _BaseScreenState();
 }
 
 class _BaseScreenState extends State<BaseScreen> {
-  PageController _pageController = PageController();
+  final PageController _pageController = PageController();
   int _page = 0;
 
   @override
