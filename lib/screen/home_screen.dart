@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -247,6 +248,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () async {
                   logger.d('export to csv clicked');
                   List<List<String>> booksList = [];
+
+                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished]
+                  List<String> identificationHeader = ['0','tsundoku','aolabs','0','',''];
+                  booksList.add(identificationHeader);
+
                   final sortedBooksList = await SQLHelper.getBooks();
 
                   // convert book list to type usable for csv
@@ -262,8 +268,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     booksList.add(oneBookData);
                   }
                   logger.i('booksList = $booksList');
+
                   String csvData = const ListToCsvConverter().convert(booksList);
-                  // logger.i('csvData = $csvData');
+                  logger.i('csvData = $csvData');
 
                   // check whether permission is given for this app or not.
                   var permissionStatus = await Permission.manageExternalStorage.status;
@@ -318,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // const String downloadDir = "/storage/emulated/0/Download";
                     final String downloadDir = directory.path;
-                    final String filenameCsv = "csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
+                    final String filenameCsv = "tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
                     final String exportPath = "$downloadDir/$filenameCsv";
                     logger.i('exportPath = $exportPath');
                     
@@ -362,31 +369,49 @@ class _HomeScreenState extends State<HomeScreen> {
                     List<List> listFromCsv = await csvFile.transform(utf8.decoder).transform(const CsvToListConverter()).toList();
                     logger.i('list from csv = $listFromCsv');
 
-                    // if _books not null (got existing records) show alert dialog to add or overwrite
-                    var overwriteConfirm = 'Cancel';
-                    if (_books.isNotEmpty) {
-                      overwriteConfirm = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => alertForOverwrite(),));
-                    }
-                    logger.d('overwrite confirm = $overwriteConfirm');
+                    // safety check on the imported list
+                    List safetyRowFromCsv = listFromCsv.first;
+                    List defaultIdHeader = [0,'tsundoku','aolabs',0,'',''];
+                    bool checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
 
-                    // add csv books into db
-                    if ('Cancel'.compareTo(overwriteConfirm) == 0) {
+                    if (checkPass == false) {
                       // show snack bar for confirmation
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Import cancelled. Books data won\'t be overwrite.'),
+                          content: Text('Import cancelled. Incompatible CSV file selected.'),
                         ),
                       );
                     }
                     else {
-                      // do db works
-                      _deleteAllAndAddBooks(listFromCsv);
-                      // show snack bar for confirmation
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Import completed. Books data has been updated.'),
-                        ),
-                      );
+                      // remove safety row first (no need to omport that)
+                      listFromCsv.removeAt(0);
+
+                      // if _books not null (got existing records) show alert dialog to add or overwrite
+                      var overwriteConfirm = 'Cancel';
+                      if (_books.isNotEmpty) {
+                        overwriteConfirm = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => alertForOverwrite(),));
+                      }
+                      logger.d('overwrite confirm = $overwriteConfirm');
+
+                      // add csv books into db
+                      if ('Cancel'.compareTo(overwriteConfirm) == 0) {
+                        // show snack bar for confirmation
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Import cancelled. Books data won\'t be overwrite.'),
+                          ),
+                        );
+                      }
+                      else {
+                        // do db works
+                        _deleteAllAndAddBooks(listFromCsv);
+                        // show snack bar for confirmation
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Import completed. Books data has been updated.'),
+                          ),
+                        );
+                      }
                     }
                   }
                 },
