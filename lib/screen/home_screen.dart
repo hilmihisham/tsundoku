@@ -5,6 +5,7 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
 import 'package:tsundoku/util/sql_helper.dart';
@@ -19,6 +20,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // logger
+  final logger = Logger();
+
   // all books
   List<Map<String, dynamic>> _books = [];
 
@@ -58,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final countFinishedBooks = await SQLHelper.getCountByStatus("2");
     _countBooksFinished = countFinishedBooks!;
 
-    debugPrint("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
+    logger.i("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
 
     setState(() {
       //_books = data;
@@ -97,10 +101,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // delete and re-add books from imported csv
   void _deleteAllAndAddBooks(List<List> listFromCsv) async {
     int deleteCount = await SQLHelper.deleteAllBooks();
-    debugPrint('all $deleteCount books deleted');
+    logger.i('all $deleteCount books deleted');
 
     int lastIdInserted = await SQLHelper.insertMultiple(listFromCsv);
-    debugPrint('last id inserted = $lastIdInserted');
+    logger.i('last id inserted = $lastIdInserted');
 
     _refreshBooks();
   }
@@ -240,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ElevatedButton(
                 child: const Text('Export to CSV'),
                 onPressed: () async {
-                  debugPrint('export to csv clicked');
+                  logger.d('export to csv clicked');
                   List<List<String>> booksList = [];
                   final sortedBooksList = await SQLHelper.getBooks();
 
@@ -256,14 +260,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ];
                     booksList.add(oneBookData);
                   }
-                  debugPrint('booksList = $booksList');
+                  logger.i('booksList = $booksList');
                   String csvData = const ListToCsvConverter().convert(booksList);
-                  // debugPrint('csvData = $csvData');
+                  // logger.i('csvData = $csvData');
 
                   // get path to export csv to
                   final String exportDir = (await getExternalStorageDirectory())!.path;
                   final String exportPath = "$exportDir/csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
-                  debugPrint('exportPath = $exportPath');
+                  logger.i('exportPath = $exportPath');
                   
                   // write the csv file
                   final File file = File(exportPath);
@@ -291,25 +295,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   if (result == null) {
                     // user cancel selecting file
-                    debugPrint('file picking cancelled');
+                    logger.d('file picking cancelled');
                   }
                   else {
                     String? path = result.files.first.path;
-                    debugPrint('selected file path = $path');
+                    logger.i('selected file path = $path');
 
                     // get file
                     final csvFile = File(path!).openRead();
 
                     // convert csv to list
                     List<List> listFromCsv = await csvFile.transform(utf8.decoder).transform(const CsvToListConverter()).toList();
-                    debugPrint('list from csv = $listFromCsv');
+                    logger.i('list from csv = $listFromCsv');
 
                     // if _books not null (got existing records) show alert dialog to add or overwrite
                     var overwriteConfirm = 'Cancel';
                     if (_books.isNotEmpty) {
                       overwriteConfirm = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => alertForOverwrite(),));
                     }
-                    debugPrint('overwrite confirm = $overwriteConfirm');
+                    logger.d('overwrite confirm = $overwriteConfirm');
 
                     // add csv books into db
                     if ('Cancel'.compareTo(overwriteConfirm) == 0) {

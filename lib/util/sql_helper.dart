@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 
 class SQLHelper {
+
   static Future<void> createTables(sql.Database database) async {
     await database.execute("""CREATE TABLE books(
       id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -74,6 +75,9 @@ class SQLHelper {
 
   // insert multiple books
   static Future<int> insertMultiple(List<List> books) async {
+    // logger
+    final logger = Logger();
+    
     final db = await SQLHelper.db();
 
     var buffer = StringBuffer();
@@ -96,7 +100,7 @@ class SQLHelper {
       buffer.write(book.elementAt(5)); // date finished
       buffer.write("')");
     }
-    debugPrint('buffer = $buffer');
+    logger.d('buffer = $buffer');
 
     var raw = await db.rawInsert("INSERT INTO books (id, title, author, status, datePurchase, dateFinished) VALUES ${buffer.toString()}");
     return raw;
@@ -158,22 +162,28 @@ class SQLHelper {
 
   // delete a book by id
   static Future<void> deleteBook(int id) async {
+    // logger
+    final logger = Logger();
+
     final db = await SQLHelper.db();
     try {
       await db.delete("books", where: "id = ?", whereArgs: [id]);
     } catch (e) {
-      debugPrint("Error deleting a book: $e");
+      logger.e("Error deleting a book: $e", error: 'Error',);
     }
   }
 
   // delete all books from table
   static Future<int> deleteAllBooks() async {
+    // logger
+    final logger = Logger();
+
     final db = await SQLHelper.db();
     int result = 0;
     try {
       result = await db.delete("books");
     } catch (e) {
-      debugPrint("Error deleting all books: $e");
+      logger.e("Error deleting all books: $e", error: 'Error',);
     }
     return result;
   }

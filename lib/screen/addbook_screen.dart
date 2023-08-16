@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 class AddBookScreen extends StatefulWidget {
@@ -20,6 +21,8 @@ class AddBookScreen extends StatefulWidget {
 }
 
 class _AddBookScreen extends State<AddBookScreen> {
+  // logger
+  final logger = Logger();
 
   bool _isForgotDateDone = false;
   bool _isDoneGetDataFromHomeScreen = false;
@@ -66,7 +69,7 @@ class _AddBookScreen extends State<AddBookScreen> {
           });
         });
 
-        debugPrint('i forgot lol = $_isForgotDateDone');
+        logger.i('i forgot lol = $_isForgotDateDone');
       },
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5,),
@@ -147,11 +150,11 @@ class _AddBookScreen extends State<AddBookScreen> {
   @override
   Widget build(BuildContext context) {
 
-    debugPrint('AddBookScreen building, id = ${widget.id}, _isDoneGetDataFromHomeScreen = $_isDoneGetDataFromHomeScreen');
+    logger.d('AddBookScreen building, id = ${widget.id}, _isDoneGetDataFromHomeScreen = $_isDoneGetDataFromHomeScreen');
 
     if (widget.id != -1 && _isDoneGetDataFromHomeScreen == false) {
       existingBook = widget.book!;
-      debugPrint('existing book data = $existingBook');
+      logger.i('existing book data = $existingBook');
       _titleController.text = existingBook['title'];
       _authorController.text = existingBook['author'];
       _bookStatus = int.parse(existingBook['status']);
@@ -263,16 +266,16 @@ class _AddBookScreen extends State<AddBookScreen> {
                       );
 
                       if (pickedDate != null) {
-                        debugPrint(pickedDate.toString());
+                        logger.i(pickedDate.toString());
                         String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate); // format date in required form here we use yyyy-MM-dd that means time is removed
-                        debugPrint(formattedDate); //formatted date output using intl.dart package =>  2022-07-04
+                        logger.d(formattedDate); //formatted date output using intl.dart package =>  2022-07-04
 
                         setState(() {
                           _datePurchaseController.text = formattedDate;
                         });
                       }
                       else {
-                        debugPrint('Date not selected');
+                        logger.d('Date not selected');
                       }
                     },
                   ),
@@ -297,16 +300,16 @@ class _AddBookScreen extends State<AddBookScreen> {
                           );
 
                           if (pickedDateDone != null) {
-                            debugPrint(pickedDateDone.toString());
+                            logger.i(pickedDateDone.toString());
                             String formattedDateDone = DateFormat('yyyy-MM-dd').format(pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
-                            debugPrint(formattedDateDone); //formatted date output using intl.dart package =>  2022-07-04
+                            logger.d(formattedDateDone); //formatted date output using intl.dart package =>  2022-07-04
 
                             setState(() {
                               _dateReadDoneController.text = formattedDateDone;
                             });
                           }
                           else {
-                            debugPrint('Date not selected');
+                            logger.d('Date not selected');
                           }
                         },
                       ),
@@ -336,7 +339,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                       else if ((_bookStatus == 2) && (_dateReadDoneController.text == '')) {
                         // if book finished is selected, but date finished is not inputted, auto select today's date
                         _dateReadDoneController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
-                        debugPrint('date finished auto set to ${_dateReadDoneController.text}');
+                        logger.d('date finished auto set to ${_dateReadDoneController.text}');
                       }
                       // save new book
                       if (widget.id == -1) {
