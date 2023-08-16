@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
@@ -264,21 +265,74 @@ class _HomeScreenState extends State<HomeScreen> {
                   String csvData = const ListToCsvConverter().convert(booksList);
                   // logger.i('csvData = $csvData');
 
-                  // get path to export csv to
-                  final String exportDir = (await getExternalStorageDirectory())!.path;
-                  final String exportPath = "$exportDir/csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
-                  logger.i('exportPath = $exportPath');
-                  
-                  // write the csv file
-                  final File file = File(exportPath);
-                  await file.writeAsString(csvData);
+                  // check whether permission is given for this app or not.
+                  var permissionStatus = await Permission.manageExternalStorage.status;
+                  if (!permissionStatus.isGranted) {
+                    // ask for permission if not granted
+                    var newPermission = await Permission.manageExternalStorage.request();
 
-                  // show snack bar with path to exported file
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('All books data is exported at $exportPath'),
-                    ),
-                  );
+                    if (!newPermission.isGranted) {
+                      logger.w('permission not granted.');
+
+                      // show snack bar informing user of permission status
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Unable to export to CSV - storage access permission is not granted.'),
+                        ),
+                      );
+                    } 
+                    else {
+                      logger.d('permission now granted. please try again.');
+
+                      // show snack bar informing user of permission status
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Storage access permission is now granted. Please try again to export to CSV.'),
+                        ),
+                      );
+                    }
+                  }
+                  else {
+                    // get path to export csv to
+                    // final String exportDir = (await getExternalStorageDirectory())!.path;
+                    // final String exportPath = "$exportDir/csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
+
+                    // init to download folder first
+                    Directory directory = Directory("/storage/emulated/0/Download");
+                    try {
+                      if (Platform.isIOS) {
+                        directory = await getApplicationDocumentsDirectory();
+                      }
+                      else {
+                        directory = Directory("/storage/emulated/0/Download");
+
+                        // fallback if download folder didn't exist
+                        if (!await directory.exists()) {
+                          await getExternalStorageDirectory();
+                        }
+                      }
+                    }
+                    catch (err, stack) {
+                      logger.e('cannot get download folder path', error: err, stackTrace: stack);
+                    }
+
+                    // const String downloadDir = "/storage/emulated/0/Download";
+                    final String downloadDir = directory.path;
+                    final String filenameCsv = "csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
+                    final String exportPath = "$downloadDir/$filenameCsv";
+                    logger.i('exportPath = $exportPath');
+                    
+                    // write the csv file
+                    final File file = File(exportPath);
+                    await file.writeAsString(csvData);
+
+                    // show snack bar with path to exported file
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('All books data is exported at Download/$filenameCsv .'),
+                      ),
+                    );
+                  }
                 },
               ),
             ),
