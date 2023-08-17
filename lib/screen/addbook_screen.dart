@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:books_finder/books_finder.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -36,6 +37,7 @@ class _AddBookScreen extends State<AddBookScreen> {
   final TextEditingController _authorController = TextEditingController();
   final TextEditingController _datePurchaseController = TextEditingController();
   final TextEditingController _dateReadDoneController = TextEditingController();
+  final TextEditingController _isbn13Controller = TextEditingController();
 
   @override
   void dispose() {
@@ -43,10 +45,11 @@ class _AddBookScreen extends State<AddBookScreen> {
     _authorController.dispose();
     _datePurchaseController.dispose();
     _dateReadDoneController.dispose();
+    _isbn13Controller.dispose();
     super.dispose();
   }
 
-  // create forgot button for finished reading date
+  /// create forgot button for finished reading date
   Widget customForgotFinishedReadDateButton() {
     return OutlinedButton(
       onPressed: () {
@@ -99,7 +102,7 @@ class _AddBookScreen extends State<AddBookScreen> {
     );
   }
 
-  // creating a custom button for book status options
+  /// creating a custom button for book status options
   Widget customBookStatusButton(String buttonName, int value, Color color) {
     return OutlinedButton(
       onPressed: () {
@@ -146,6 +149,25 @@ class _AddBookScreen extends State<AddBookScreen> {
       ),
     );
   }
+
+  /// popup alert to confirm whether search result is correct
+  Widget alertForSearchConfirm(String title, String authors, String publisher) {
+    return AlertDialog(
+      title: const Text('Is this the correct book?'),
+      icon: const Icon(Icons.search_sharp),
+      content: Text('Title: $title; Author(s): $authors; Publisher: $publisher'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'No'),
+          child: const Text('No'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'Yes'),
+          child: const Text('Yes'),
+        ),
+      ],
+    );
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -155,6 +177,7 @@ class _AddBookScreen extends State<AddBookScreen> {
     if (widget.id != -1 && _isDoneGetDataFromHomeScreen == false) {
       existingBook = widget.book!;
       logger.i('existing book data = $existingBook');
+      if (existingBook['isbn'] != null) _isbn13Controller.text = existingBook['isbn'];
       _titleController.text = existingBook['title'];
       _authorController.text = existingBook['author'];
       _bookStatus = int.parse(existingBook['status']);
@@ -199,6 +222,94 @@ class _AddBookScreen extends State<AddBookScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10.0, 15.0, 10.0, 10.0),
+                  child: TextField(
+                    controller: _isbn13Controller,
+                    decoration: const InputDecoration(
+                      labelText: 'ISBN-13 Number',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
+                  child: ElevatedButton(
+                    child: const Text('Find Book'),
+                    onPressed: () async {
+                      logger.i('_isbnController = ${_isbn13Controller.value}');
+
+                      if (_isbn13Controller.text.isEmpty) {
+                        // no input, no do search
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No ISBN number entered.'),
+                          ),
+                        );
+                      }
+                      else {
+                        final List<Book> bookSearch = await queryBooks(
+                          _isbn13Controller.text,
+                          queryType: QueryType.isbn,
+                          maxResults: 1,
+                          printType: PrintType.books,
+                          orderBy: OrderBy.relevance,
+                        );
+                        // for (Book bookResult in bookSearch) {
+                        //   logger.d(
+                        //     'title: ${bookResult.info.title}, subtitle: ${bookResult.info.subtitle}, author: ${bookResult.info.authors}\n' 
+                        //     'publisher: ${bookResult.info.publisher}, description: ${bookResult.info.description}'
+                        //   );
+                        // }
+
+                        // popup to confirm search result is correct
+                        if (bookSearch.isEmpty) {
+                          // no search result found, show snack bar to notify
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('No books found with that ISBN number.'),
+                            ),
+                          );
+                        }
+                        else {
+                          var searchResultConfirm = 'No';
+                          
+                          Book bookResult = bookSearch.first;
+
+                          String fullTitle = bookResult.info.title;
+                          if(bookResult.info.subtitle.isNotEmpty) fullTitle = '$fullTitle: ${bookResult.info.subtitle}';
+                          
+                          String allAuthors = bookResult.info.authors.toString().substring(1, bookResult.info.authors.toString().length-1);
+
+                          // search found a result, confirm result is correct
+                          searchResultConfirm = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => alertForSearchConfirm(fullTitle, allAuthors, bookResult.info.publisher),
+                            )
+                          );
+
+                          if (searchResultConfirm.compareTo('No') == 0) {
+                            // search result is wrong
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Too bad, search result is not the book that we looking for.'),
+                              ),
+                            );
+                          }
+                          else {
+                            _titleController.text = fullTitle;
+                            _authorController.text = allAuthors;
+                          }
+                        }
+                      }
+                    },
+                  ),
+                ),
+                const Divider(
+                  thickness: 2.5,
                 ),
                 Padding(
                   padding: const EdgeInsets.all(10.0),
@@ -350,6 +461,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                       }
 
                       // clear text fields
+                      _isbn13Controller.text = '';
                       _titleController.text = '';
                       _authorController.text = '';
                       _datePurchaseController.text = '';
@@ -373,14 +485,29 @@ class _AddBookScreen extends State<AddBookScreen> {
     );
   }
   
-  // insert new book to db
+  /// insert new book to db
   Future<void> _addItem() async {
-    await SQLHelper.inputBook(_titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text, _dateReadDoneController.text);
+    await SQLHelper.inputBook(
+      _titleController.text, 
+      _authorController.text, 
+      _bookStatus.toString(), 
+      _datePurchaseController.text, 
+      _dateReadDoneController.text,
+      _isbn13Controller.text
+    );
   }
 
-  // update existing book
+  /// update existing book
   Future<void> _updateItem(int id) async {
-    await SQLHelper.updateBook(id, _titleController.text, _authorController.text, _bookStatus.toString(), _datePurchaseController.text, _dateReadDoneController.text);
+    await SQLHelper.updateBook(
+      id, 
+      _titleController.text, 
+      _authorController.text, 
+      _bookStatus.toString(), 
+      _datePurchaseController.text, 
+      _dateReadDoneController.text,
+      _isbn13Controller.text
+    );
   }
 
 }

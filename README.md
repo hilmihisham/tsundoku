@@ -47,6 +47,7 @@ Also, I'm experimenting with Flutter and Dart, hopefully to understand more abou
 - 0.3.1 - 16/8/2023 - add logging (logger) to the app for more beautiful log on console
 - 0.3.2 - 16/8/2023 - permission handling (for possible issue why exporting didn't do anything?)
 - 0.3.3 - 17/8/2023 - add simple safety check in csv file (block random csv being imported), rename exported csv file
+- 0.3.4 - 17/8/2023 - experimenting with books_finder with google books api, added field for isbn13
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.

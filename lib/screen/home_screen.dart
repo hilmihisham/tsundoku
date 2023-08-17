@@ -39,10 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _countBooksReading = 0;
   int _countBooksFinished = 0;
 
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _authorController = TextEditingController();
-  final TextEditingController _datePurchaseController = TextEditingController();
-  final TextEditingController _dateReadDoneController = TextEditingController();
+  // final TextEditingController _titleController = TextEditingController();
+  // final TextEditingController _authorController = TextEditingController();
+  // final TextEditingController _datePurchaseController = TextEditingController();
+  // final TextEditingController _dateReadDoneController = TextEditingController();
 
   // fetch all data from db
   void _refreshBooks() async {
@@ -82,10 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _authorController.dispose();
-    _datePurchaseController.dispose();
-    _dateReadDoneController.dispose();
+    // _titleController.dispose();
+    // _authorController.dispose();
+    // _datePurchaseController.dispose();
+    // _dateReadDoneController.dispose();
     super.dispose();
   }
 
@@ -249,21 +249,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   logger.d('export to csv clicked');
                   List<List<String>> booksList = [];
 
-                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished]
-                  List<String> identificationHeader = ['0','tsundoku','aolabs','0','',''];
+                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished],[isbn]
+                  List<String> identificationHeader = ['0','tsundoku','aolabs','0','','',''];
                   booksList.add(identificationHeader);
 
                   final sortedBooksList = await SQLHelper.getBooks();
 
                   // convert book list to type usable for csv
                   for (var i = 0; i < sortedBooksList.length; i++) {
+                    // prevent null value from throwing error
+                    String isbnNullProtection = '';
+                    if (sortedBooksList[i]['isbn'] != null) isbnNullProtection = sortedBooksList[i]['isbn'];
+
                     List<String> oneBookData = [
                       sortedBooksList[i]['id'].toString(),
                       sortedBooksList[i]['title'],
                       sortedBooksList[i]['author'],
                       sortedBooksList[i]['status'],
                       sortedBooksList[i]['datePurchase'],
-                      sortedBooksList[i]['dateFinished']
+                      sortedBooksList[i]['dateFinished'],
+                      isbnNullProtection
                     ];
                     booksList.add(oneBookData);
                   }
@@ -371,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // safety check on the imported list
                     List safetyRowFromCsv = listFromCsv.first;
-                    List defaultIdHeader = [0,'tsundoku','aolabs',0,'',''];
+                    List defaultIdHeader = [0,'tsundoku','aolabs',0,'','',''];
                     bool checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
 
                     if (checkPass == false) {
