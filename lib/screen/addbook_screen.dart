@@ -27,6 +27,8 @@ class _AddBookScreen extends State<AddBookScreen> {
 
   bool _isForgotDateDone = false;
   bool _isDoneGetDataFromHomeScreen = false;
+  bool _validateEmptyTitle = false;
+  bool _validateEmptyAuthor = false;
 
   int _bookStatus = 0;
 
@@ -38,6 +40,9 @@ class _AddBookScreen extends State<AddBookScreen> {
   final TextEditingController _datePurchaseController = TextEditingController();
   final TextEditingController _dateReadDoneController = TextEditingController();
   final TextEditingController _isbn13Controller = TextEditingController();
+
+  final FocusNode _titleFocus = FocusNode();
+  final FocusNode _authorFocus = FocusNode();
 
   @override
   void dispose() {
@@ -169,6 +174,14 @@ class _AddBookScreen extends State<AddBookScreen> {
     );
   }
   
+  /// function triggered when tapping clear button in textfield
+  void _clearTextField(TextEditingController textController) {
+    // clear everything
+    textController.clear();
+    // update ui
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -268,11 +281,14 @@ class _AddBookScreen extends State<AddBookScreen> {
                         // popup to confirm search result is correct
                         if (bookSearch.isEmpty) {
                           // no search result found, show snack bar to notify
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('No books found with that ISBN number.'),
-                            ),
-                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No books found with that ISBN number.'),
+                              ),
+                            );
+                          }
+                          
                         }
                         else {
                           var searchResultConfirm = 'No';
@@ -285,13 +301,15 @@ class _AddBookScreen extends State<AddBookScreen> {
                           String allAuthors = bookResult.info.authors.toString().substring(1, bookResult.info.authors.toString().length-1);
 
                           // search found a result, confirm result is correct
-                          searchResultConfirm = await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => alertForSearchConfirm(fullTitle, allAuthors, bookResult.info.publisher),
-                            )
-                          );
+                          if (mounted) {
+                            searchResultConfirm = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => alertForSearchConfirm(fullTitle, allAuthors, bookResult.info.publisher),
+                              )
+                            );
+                          }
 
-                          if (searchResultConfirm.compareTo('No') == 0) {
+                          if (searchResultConfirm.compareTo('No') == 0 && mounted) {
                             // search result is wrong
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -315,24 +333,58 @@ class _AddBookScreen extends State<AddBookScreen> {
                   padding: const EdgeInsets.all(10.0),
                   child: TextField(
                     controller: _titleController,
-                    decoration: const InputDecoration(
+                    onChanged: (value) {
+                      // update ui
+                      setState(() {});
+                    },
+                    decoration: InputDecoration(
                       labelText: 'Title',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: _titleController.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear_sharp),
+                            onPressed: () => _clearTextField(_titleController),
+                          )
+                      ,
+                      errorText: _validateEmptyTitle ? "c'mon, there's no books with no title, innit?" : null,
                     ),
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
+                    focusNode: _titleFocus,
+                    onEditingComplete:() {
+                      // had to do this coz there's a clear button in between TextField for textInputAction to work properly
+                      logger.d('onEditingComplete');
+                      // unfocus this title field
+                      _titleFocus.unfocus();
+                      // request to move the focus to author field
+                      FocusScope.of(context).requestFocus(_authorFocus);
+                    },
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: TextField(
                     controller: _authorController,
-                    decoration: const InputDecoration(
+                    onChanged: (value) {
+                      // update ui
+                      setState(() {});
+                    },
+                    decoration: InputDecoration(
                       labelText: 'Author',
-                      border: OutlineInputBorder(),  
+                      border: const OutlineInputBorder(),
+                      suffixIcon: _authorController.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear_sharp),
+                            onPressed: () => _clearTextField(_authorController),
+                          )
+                      ,
+                      errorText: _validateEmptyAuthor ? "who's the writer? ghost ah?" : null,
                     ),
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.done,
+                    focusNode: _authorFocus,
                   ),
                 ),
                 Padding(
@@ -442,35 +494,53 @@ class _AddBookScreen extends State<AddBookScreen> {
                   padding: const EdgeInsets.all(10.0),
                   child: ElevatedButton(
                     onPressed: () async {
+
+                      // for title entry validation
+                      setState(() {
+                        _validateEmptyTitle = _titleController.text.isEmpty;
+                        _validateEmptyAuthor = _authorController.text.isEmpty;
+                      });
                       
-                      // if i forgot date finish is selected
-                      if (_isForgotDateDone) {
-                        _dateReadDoneController.text = '';
-                      }
-                      else if ((_bookStatus == 2) && (_dateReadDoneController.text == '')) {
-                        // if book finished is selected, but date finished is not inputted, auto select today's date
-                        _dateReadDoneController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
-                        logger.d('date finished auto set to ${_dateReadDoneController.text}');
-                      }
-                      // save new book
-                      if (widget.id == -1) {
-                        await _addItem();
-                      }
-                      if (widget.id != -1) {
-                        await _updateItem(widget.id);
-                      }
+                      // proceed if book title and author is not empty (_validateEmptyTitle & _validateEmptyAuthor = false)
+                      if (!_validateEmptyTitle && !_validateEmptyAuthor) {
+                        // if i forgot date finish is selected
+                        if (_isForgotDateDone) {
+                          _dateReadDoneController.text = '';
+                        }
+                        else if ((_bookStatus == 2) && (_dateReadDoneController.text == '')) {
+                          // if book finished is selected, but date finished is not inputted, auto select today's date
+                          _dateReadDoneController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                          logger.d('date finished auto set to ${_dateReadDoneController.text}');
+                        }
 
-                      // clear text fields
-                      _isbn13Controller.text = '';
-                      _titleController.text = '';
-                      _authorController.text = '';
-                      _datePurchaseController.text = '';
-                      _dateReadDoneController.text = '';
-                      _isForgotDateDone = false;
+                        // save new book
+                        if (widget.id == -1) {
+                          await _addItem();
+                        }
+                        if (widget.id != -1) {
+                          await _updateItem(widget.id);
+                        }
 
-                      // close bottom sheet
-                      // Navigator.of(context).pop();
-                      Navigator.pop(context, true);
+                        // clear text fields (relics from having this screen as bottom sheet)
+                        // _isbn13Controller.text = '';
+                        // _titleController.text = '';
+                        // _authorController.text = '';
+                        // _datePurchaseController.text = '';
+                        // _dateReadDoneController.text = '';
+                        // _isForgotDateDone = false;
+
+                        if (mounted) {
+                          // give update to user
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: (widget.id == -1) ? Text("New book '${_titleController.text}' added.") : Text("Book '${_titleController.text}' is updated."),
+                            ),
+                          );
+
+                          // close add book screen, and send true to notify home screen that a book has been added/updated to refresh the book list there
+                          Navigator.pop(context, true);
+                        }
+                      } 
                     }, 
                     child: Text(widget.id == -1 ? 'Add New Book' : 'Update'),
                   ),
@@ -511,3 +581,11 @@ class _AddBookScreen extends State<AddBookScreen> {
   }
 
 }
+
+// extension Utility on BuildContext {
+//   void nextEditableTextFocus() {
+//     do {
+//       FocusScope.of(this).nextFocus();
+//     } while (FocusScope.of(this).focusedChild?.context?.widget is! TextField);
+//   }
+// }

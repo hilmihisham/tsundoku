@@ -15,6 +15,7 @@ I'll put one later if I remember.
 Soon.
 
 ## Does it work?
+Short answer: Yes.
 - 31/7/2021 - Proof of concept stage. At this point, it's all just purely visuals and dummy data, thanks to design forked from [JideGuru](https://github.com/JideGuru).
 - 4/8/2023 - I remembered again that I got this side project. Continuing the original code was confusing as heck after I upgrade to flutter 3.0, so here's a restart. Thanks to [kindacode.com](https://www.kindacode.com/article/flutter-sqlite/) for guide on using sqflite, that was the base code that I use in this round of refresh.
 
@@ -49,6 +50,7 @@ Also, I'm experimenting with Flutter and Dart, hopefully to understand more abou
 - 0.3.3 - 17/8/2023 - add simple safety check in csv file (block random csv being imported), rename exported csv file
 - 0.3.4 - 17/8/2023 - experimenting with books_finder with google books api, added field for isbn13
 - 0.3.5 - 17/8/2023 - added permission for internet (Find Book button not working previously)
+- 0.3.6 - 21/8/2023 - add clear field button on title and author entry, add validation on title and author (can't be empty), try fix 'BulidContext async' warning in add book screen
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
