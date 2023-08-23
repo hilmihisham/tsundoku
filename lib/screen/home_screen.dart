@@ -5,6 +5,7 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,6 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // logger
   final logger = Logger();
 
+  // to control showing floating action button
+  bool _showFab = true;
+
   // all books
   List<Map<String, dynamic>> _books = [];
 
@@ -33,16 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // List<Map<String, dynamic>> _booksReading = [];
   // List<Map<String, dynamic>> _booksFinished = [];
 
-  bool _isLoading = true;
+  bool _isLoading = true; // bool for checking loading book list
 
   int _countBooksNew = 0;
   int _countBooksReading = 0;
   int _countBooksFinished = 0;
-
-  // final TextEditingController _titleController = TextEditingController();
-  // final TextEditingController _authorController = TextEditingController();
-  // final TextEditingController _datePurchaseController = TextEditingController();
-  // final TextEditingController _dateReadDoneController = TextEditingController();
 
   // fetch all data from db
   void _refreshBooks() async {
@@ -82,10 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    // _titleController.dispose();
-    // _authorController.dispose();
-    // _datePurchaseController.dispose();
-    // _dateReadDoneController.dispose();
     super.dispose();
   }
 
@@ -165,62 +160,75 @@ class _HomeScreenState extends State<HomeScreen> {
         ? const Center(
           child: CircularProgressIndicator(),
         )
-        : ListView.builder(
-          itemCount: _books.length,
-          itemBuilder:(context, index) => Card(
-            color: bookListColor(_books[index]['status']),
-            margin: const EdgeInsets.all(8.0),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0,),
-              title: Text(_books[index]['title']),
-              titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 17, color: Colors.black87,),
-              //subtitle: Text(_books[index]['author'] + ' || \u{1F4D6} ' + _books[index]['datePurchase'] + ' || \u{2714} '),
-              subtitle: ('2' != _books[index]['status'])
-                ? Text.rich(
-                    TextSpan(
+        : NotificationListener<UserScrollNotification>(
+            onNotification: (notification) {
+              final ScrollDirection direction = notification.direction;
+              setState(() {
+                if (direction == ScrollDirection.reverse) {
+                  _showFab = false;
+                }
+                else if (direction == ScrollDirection.forward) {
+                  _showFab = true;
+                }
+              });
+              return true;
+            },
+            child: ListView.builder(
+              itemCount: _books.length,
+              itemBuilder:(context, index) => Card(
+                color: bookListColor(_books[index]['status']),
+                margin: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0,),
+                  title: Text(_books[index]['title']),
+                  titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 17, color: Colors.black87,),
+                  subtitle: ('2' != _books[index]['status'])
+                    ? Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: _books[index]['author'] + '\n'),
+                            const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
+                            TextSpan(text: ' ${_books[index]['datePurchase']}'),
+                          ],
+                        ),
+                      )
+                    : Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: _books[index]['author'] + '\n'),
+                            const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
+                            TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
+                            const WidgetSpan(child: Icon(Icons.done_all, size: 18.0,)),
+                            TextSpan(text: ' ${_books[index]['dateFinished']}'),
+                          ],
+                        ),
+                      ),
+                  trailing: SizedBox(
+                    width: 100,
+                    child: Row(
                       children: [
-                        TextSpan(text: _books[index]['author'] + '\n'),
-                        const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
-                        TextSpan(text: ' ${_books[index]['datePurchase']}'),
-                      ],
-                    ),
-                  )
-                : Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(text: _books[index]['author'] + '\n'),
-                        const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
-                        TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
-                        const WidgetSpan(child: Icon(Icons.done_all, size: 18.0,)),
-                        TextSpan(text: ' ${_books[index]['dateFinished']}'),
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () async {
+                            var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddBookScreen(id: _books[index]['id'], book: _books[index])));
+
+                            if (result != null && result) {
+                              setState(() {
+                                _refreshBooks();
+                              });
+                            }
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteItem(_books[index]['id'], _books[index]['title']),
+                        ),
                       ],
                     ),
                   ),
-              trailing: SizedBox(
-                width: 100,
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () async {
-                        var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddBookScreen(id: _books[index]['id'], book: _books[index])));
-
-                        if (result != null && result) {
-                          setState(() {
-                            _refreshBooks();
-                          });
-                        }
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deleteItem(_books[index]['id'], _books[index]['title']),
-                    ),
-                  ],
                 ),
               ),
             ),
-          ),
         ),
       drawer: Drawer(
         child: ListView(
@@ -460,19 +468,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () async {
-          var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
+      floatingActionButton: AnimatedSlide(
+        duration: const Duration(milliseconds: 300),
+        offset: _showFab ? Offset.zero : const Offset(0.0, 2.0),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: _showFab ? 1.0 : 0.0,
+          child: FloatingActionButton(
+            child: const Icon(Icons.add),
+            onPressed: () async {
+              var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
 
-          // to rebuild the screen if navigator pop returns true
-          if (result != null && result) {
-            setState(() {
-              _refreshBooks();
-            });
-          }
-        },
-      ),
+              // to rebuild the screen if navigator pop returns true
+              if (result != null && result) {
+                setState(() {
+                  _refreshBooks();
+                });
+              }
+            },
+          ),
+        ),
+      )
     );
   }
 }
