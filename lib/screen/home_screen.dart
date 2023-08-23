@@ -429,6 +429,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (_books.isNotEmpty) {
                         overwriteConfirm = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => alertForOverwrite(),));
                       }
+                      else {
+                        // _books list is empty, then just proceed to write data from csv
+                        overwriteConfirm = 'OK';
+                      }
                       logger.d('overwrite confirm = $overwriteConfirm');
 
                       // add csv books into db
