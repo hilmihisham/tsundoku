@@ -43,6 +43,8 @@ class _BaseScreenState extends State<BaseScreen> {
       ),
       bottomNavigationBar: BottomAppBar(
         color: Theme.of(context).primaryColor,
+        // shape: const CircularNotchedRectangle(), // create notch in bottomappbar
+        // notchMargin: 6.0,
         child: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

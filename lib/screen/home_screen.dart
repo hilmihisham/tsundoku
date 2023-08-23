@@ -92,11 +92,19 @@ class _HomeScreenState extends State<HomeScreen> {
   // delete a book
   void _deleteItem(int id, String title) async {
     await SQLHelper.deleteBook(id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Book $title is deleted.'),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Book $title is deleted.'),
+          action: SnackBarAction(
+            label: 'OK', 
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
+        ),
+      );
+    }
     _refreshBooks();
   }
 
@@ -194,7 +202,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit),
-                      // onPressed: () => _showForm(_books[index]['id']),
                       onPressed: () async {
                         var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddBookScreen(id: _books[index]['id'], book: _books[index])));
 
@@ -339,11 +346,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     await file.writeAsString(csvData);
 
                     // show snack bar with path to exported file
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('All books data is exported at Download/$filenameCsv .'),
-                      ),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('All books data is exported at Download/$filenameCsv .'),
+                          action: SnackBarAction(
+                            label: 'OK', 
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            },
+                          ),
+                        ),
+                      );
+                    }
                   }
                 },
               ),
@@ -379,11 +394,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     List defaultIdHeader = [0,'tsundoku','aolabs',0,'','',''];
                     bool checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
 
-                    if (checkPass == false) {
+                    if (checkPass == false && mounted) {
                       // show snack bar for confirmation
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Import cancelled. Incompatible CSV file selected.'),
+                        SnackBar(
+                          content: const Text('Import cancelled. Incompatible CSV file selected.'),
+                          action: SnackBarAction(
+                            label: 'OK', 
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            },
+                          ),
                         ),
                       );
                     }
@@ -399,11 +420,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       logger.d('overwrite confirm = $overwriteConfirm');
 
                       // add csv books into db
-                      if ('Cancel'.compareTo(overwriteConfirm) == 0) {
+                      if ('Cancel'.compareTo(overwriteConfirm) == 0 && mounted) {
                         // show snack bar for confirmation
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Import cancelled. Books data won\'t be overwrite.'),
+                          SnackBar(
+                            content: const Text('Import cancelled. Books data won\'t be overwrite.'),
+                            action: SnackBarAction(
+                              label: 'OK', 
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              },
+                            ),
                           ),
                         );
                       }
@@ -411,11 +438,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         // do db works
                         _deleteAllAndAddBooks(listFromCsv);
                         // show snack bar for confirmation
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Import completed. Books data has been updated.'),
-                          ),
-                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Import completed. Books data has been updated.'),
+                              action: SnackBarAction(
+                                label: 'OK', 
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                },
+                              ),
+                            ),
+                          );
+                        }
                       }
                     }
                   }
@@ -427,7 +462,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
-        // onPressed: () => _showForm(null),
         onPressed: () async {
           var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
 

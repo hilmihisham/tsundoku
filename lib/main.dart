@@ -17,6 +17,7 @@ class MainApp extends StatelessWidget {
       title: 'tsundoku',
       theme: ThemeData(
         primarySwatch: Colors.blueGrey,
+        // useMaterial3: true,
       ),
       // home: const HomeScreen(),
       home: const BaseScreen(),

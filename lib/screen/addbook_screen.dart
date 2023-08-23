@@ -51,6 +51,10 @@ class _AddBookScreen extends State<AddBookScreen> {
     _datePurchaseController.dispose();
     _dateReadDoneController.dispose();
     _isbn13Controller.dispose();
+
+    _titleFocus.dispose();
+    _authorFocus.dispose();
+
     super.dispose();
   }
 
@@ -258,8 +262,14 @@ class _AddBookScreen extends State<AddBookScreen> {
                       if (_isbn13Controller.text.isEmpty) {
                         // no input, no do search
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('No ISBN number entered.'),
+                          SnackBar(
+                            content: const Text('No ISBN number entered.'),
+                            action: SnackBarAction(
+                              label: 'OK', 
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              },
+                            ),
                           ),
                         );
                       }
@@ -283,8 +293,14 @@ class _AddBookScreen extends State<AddBookScreen> {
                           // no search result found, show snack bar to notify
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('No books found with that ISBN number.'),
+                              SnackBar(
+                                content: const Text('No books found with that ISBN number.'),
+                                action: SnackBarAction(
+                                  label: 'OK', 
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                  },
+                                ),
                               ),
                             );
                           }
@@ -312,8 +328,14 @@ class _AddBookScreen extends State<AddBookScreen> {
                           if (searchResultConfirm.compareTo('No') == 0 && mounted) {
                             // search result is wrong
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Too bad, search result is not the book that we looking for.'),
+                              SnackBar(
+                                content: const Text('Too bad, search result is not the book that we looking for.'),
+                                action: SnackBarAction(
+                                  label: 'OK', 
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                  },
+                                ),
                               ),
                             );
                           }

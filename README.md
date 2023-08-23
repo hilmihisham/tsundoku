@@ -51,6 +51,8 @@ Also, I'm experimenting with Flutter and Dart, hopefully to understand more abou
 - 0.3.4 - 17/8/2023 - experimenting with books_finder with google books api, added field for isbn13
 - 0.3.5 - 17/8/2023 - added permission for internet (Find Book button not working previously)
 - 0.3.6 - 21/8/2023 - add clear field button on title and author entry, add validation on title and author (can't be empty), try fix 'BulidContext async' warning in add book screen
+- 0.3.7 - 23/8/2023 - more fix 'BulidContext async' warning in home screen, add OK button to Snackbar
+- 0.3.8 - 23/8/2023 - update Add FloatingActionButton
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
