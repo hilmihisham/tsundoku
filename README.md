@@ -55,6 +55,7 @@ Also, I'm experimenting with Flutter and Dart, hopefully to understand more abou
 - 0.3.8 - 23/8/2023 - update Add FloatingActionButton (hidden animation thanks to [CopsOnRoad](https://stackoverflow.com/a/52731484) on StackOverflow)
 - 0.4.0 - 23/8/2023 - change app package name (no more default com.example usage), refresh db structure, add publisher field (db and screen, csv not yet)
 - 0.4.1 - 23/8/2023 - handle import csv if db is empty lol
+- 0.4.2 - 23/8/2023 - add publisher field to csv import/export
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.

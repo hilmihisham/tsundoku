@@ -127,7 +127,7 @@ class SQLHelper {
       if (buffer.isNotEmpty) {
         buffer.write(",\n");
       }
-      // buffer.write = ('id', 'title', 'author', 'status', 'date purchase', 'date finished', 'isbn')
+      // buffer.write = ('id', 'title', 'author', 'status', 'date purchase', 'date finished', 'isbn','publisher')
       buffer.write("('");
       buffer.write(book.elementAt(0)); // id
       buffer.write("', '");
@@ -142,11 +142,13 @@ class SQLHelper {
       buffer.write(book.elementAt(5)); // date finished
       buffer.write("', '");
       buffer.write(book.elementAt(6)); // isbn
+      buffer.write("', '");
+      buffer.write(book.elementAt(7)); // publisher
       buffer.write("')");
     }
     logger.d('buffer = $buffer');
 
-    var raw = await db.rawInsert("INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn) VALUES ${buffer.toString()}");
+    var raw = await db.rawInsert("INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}");
     return raw;
   }
 

@@ -264,8 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   logger.d('export to csv clicked');
                   List<List<String>> booksList = [];
 
-                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished],[isbn]
-                  List<String> identificationHeader = ['0','tsundoku','aolabs','0','','',''];
+                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished],[isbn],[publisher]
+                  List<String> identificationHeader = ['0','tsundoku','aolabs','0','','','',''];
                   booksList.add(identificationHeader);
 
                   final sortedBooksList = await SQLHelper.getBooks();
@@ -273,8 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   // convert book list to type usable for csv
                   for (var i = 0; i < sortedBooksList.length; i++) {
                     // prevent null value from throwing error
-                    String isbnNullProtection = '';
-                    if (sortedBooksList[i]['isbn'] != null) isbnNullProtection = sortedBooksList[i]['isbn'];
+                    // String nullProtection = '';
+                    // if (sortedBooksList[i]['isbn'] != null) nullProtection = sortedBooksList[i]['isbn'];
 
                     List<String> oneBookData = [
                       sortedBooksList[i]['id'].toString(),
@@ -283,8 +283,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       sortedBooksList[i]['status'],
                       sortedBooksList[i]['datePurchase'],
                       sortedBooksList[i]['dateFinished'],
-                      isbnNullProtection
+                      //if (sortedBooksList[i]['isbn'] != null) nullProtection = sortedBooksList[i]['isbn'],
+                      //if (sortedBooksList[i]['publisher'] != null) nullProtection = sortedBooksList[i]['publisher']
                     ];
+                    // handling for new field added in db (with null value)
+                    String nullProtection = '';
+                    (sortedBooksList[i]['isbn'] != null) ? oneBookData.add(sortedBooksList[i]['isbn']) : oneBookData.add(nullProtection);
+                    (sortedBooksList[i]['publisher'] != null) ? oneBookData.add(sortedBooksList[i]['publisher']) : oneBookData.add(nullProtection);
+
                     booksList.add(oneBookData);
                   }
                   logger.i('booksList = $booksList');
@@ -399,12 +405,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // convert csv to list
                     List<List> listFromCsv = await csvFile.transform(utf8.decoder).transform(const CsvToListConverter()).toList();
-                    logger.i('list from csv = $listFromCsv');
 
                     // safety check on the imported list
                     List safetyRowFromCsv = listFromCsv.first;
-                    List defaultIdHeader = [0,'tsundoku','aolabs',0,'','',''];
+                    List defaultIdHeader = [0,'tsundoku','aolabs',0,'','','',''];
                     bool checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
+                    logger.i('list from csv = $listFromCsv, defaultIdHeader = $defaultIdHeader, checkPass = $checkPass');
 
                     if (checkPass == false && mounted) {
                       // show snack bar for confirmation
