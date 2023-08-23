@@ -302,21 +302,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       logger.w('permission not granted.');
 
                       // show snack bar informing user of permission status
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Unable to export to CSV - storage access permission is not granted.'),
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Unable to export to CSV - storage access permission is not granted.'),
+                          ),
+                        );
+                      }
                     } 
                     else {
                       logger.d('permission now granted. please try again.');
 
                       // show snack bar informing user of permission status
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Storage access permission is now granted. Please try again to export to CSV.'),
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Storage access permission is now granted. Please try again to export to CSV.'),
+                          ),
+                        );
+                      }
                     }
                   }
                   else {
@@ -464,7 +468,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 },
               ),
-            )
+            ),
           ],
         ),
       ),

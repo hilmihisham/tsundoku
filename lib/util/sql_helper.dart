@@ -10,45 +10,60 @@ class SQLHelper {
       author TEXT,
       status TEXT,
       datePurchase TEXT,
-      dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-    """);
-  }
-
-  static Future<void> createTablesV2(sql.Database database) async {
-    await database.execute("""CREATE TABLE books(
-      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-      title TEXT,
-      author TEXT,
-      status TEXT,
-      datePurchase TEXT,
-      dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      dateFinished TEXT
-    )
-    """);
-  }
-
-  static Future<void> createTablesV3(sql.Database database) async {
-    await database.execute("""CREATE TABLE books(
-      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-      title TEXT,
-      author TEXT,
-      status TEXT,
-      datePurchase TEXT,
       dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       dateFinished TEXT,
-      isbn TEXT
+      isbn TEXT,
+      publisher TEXT
     )
     """);
   }
+  
+  // static Future<void> createTables(sql.Database database) async {
+  //   await database.execute("""CREATE TABLE books(
+  //     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  //     title TEXT,
+  //     author TEXT,
+  //     status TEXT,
+  //     datePurchase TEXT,
+  //     dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  //   )
+  //   """);
+  // }
 
-  static Future<void> updateTablesV1toV2(sql.Database database) async {
-    await database.execute('ALTER TABLE books ADD dateFinished TEXT');
-  }
+  // static Future<void> createTablesV2(sql.Database database) async {
+  //   await database.execute("""CREATE TABLE books(
+  //     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  //     title TEXT,
+  //     author TEXT,
+  //     status TEXT,
+  //     datePurchase TEXT,
+  //     dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  //     dateFinished TEXT
+  //   )
+  //   """);
+  // }
 
-  static Future<void> updateTablesV2toV3(sql.Database database) async {
-    await database.execute('ALTER TABLE books ADD isbn TEXT');
-  }
+  // static Future<void> createTablesV3(sql.Database database) async {
+  //   await database.execute("""CREATE TABLE books(
+  //     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  //     title TEXT,
+  //     author TEXT,
+  //     status TEXT,
+  //     datePurchase TEXT,
+  //     dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  //     dateFinished TEXT,
+  //     isbn TEXT
+  //   )
+  //   """);
+  // }
+
+  // static Future<void> updateTablesV1toV2(sql.Database database) async {
+  //   await database.execute('ALTER TABLE books ADD dateFinished TEXT');
+  // }
+
+  // static Future<void> updateTablesV2toV3(sql.Database database) async {
+  //   await database.execute('ALTER TABLE books ADD isbn TEXT');
+  // }
 
   // id: the id of a item
   // title, author, status, datePurchase: all about the book data
@@ -57,27 +72,30 @@ class SQLHelper {
   // dateCreated: the time that the item was created. It will be automatically handled by SQLite
   // dateFinished: yyyy-MM-dd
   // isbn: ISBN-13 number
+  // publisher: book publisher (can get from google books api as well)
 
   static Future<sql.Database> db() async {
     return sql.openDatabase(
       'tsundoku.db',
-      version: 3,
+      version: 1,
       onCreate: (sql.Database database, int version) async {
-        await createTablesV3(database);
+        await createTables(database);
       },
-      onUpgrade: (sql.Database database, oldVersion, newVersion) async {
-        if (oldVersion == 1) {
-          await updateTablesV1toV2(database);
-        }
-        if (oldVersion == 2) {
-          await updateTablesV2toV3(database);
-        }
-      },
+      // onUpgrade: (sql.Database database, oldVersion, newVersion) async {
+      //   if (oldVersion == 1) {
+      //     await updateTablesV1toV2(database);
+      //   }
+      //   if (oldVersion == 2) {
+      //     await updateTablesV2toV3(database);
+      //   }
+      // },
     );
   }
 
   /// input new book into db
-  static Future<int> inputBook(String title, String? author, String? status, String? datePurchase, String? dateFinished, String? isbn) async {
+  static Future<int> inputBook(
+    String title, String? author, String? status, String? datePurchase, String? dateFinished, String? isbn, String? publisher
+  ) async {
     final db = await SQLHelper.db();
 
     final data = {
@@ -88,6 +106,7 @@ class SQLHelper {
       'dateCreated': DateTime.now().toString(),
       'dateFinished': dateFinished,
       'isbn': isbn,
+      'publisher': publisher,
     };
 
     final id = await db.insert('books', data,
@@ -169,7 +188,9 @@ class SQLHelper {
   }
 
   /// update a book by id
-  static Future<int> updateBook(int id, String title, String? author, String? status, String? datePurchase, String? dateFinished, String? isbn) async {
+  static Future<int> updateBook(
+    int id, String title, String? author, String? status, String? datePurchase, String? dateFinished, String? isbn, String? publisher
+  ) async {
     final db = await SQLHelper.db();
 
     final data = {
@@ -179,6 +200,7 @@ class SQLHelper {
       'datePurchase': datePurchase,
       'dateFinished': dateFinished,
       'isbn': isbn,
+      'publisher': publisher,
     };
 
     final result = await db.update('books', data, where: "id = ?", whereArgs: [id]);
