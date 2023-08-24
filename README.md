@@ -61,6 +61,8 @@ Version | Date | Summary
 0.4.3 | 24/8/2023 | snackbar changes: add constant duration, make it floating; add publisher to home screen ListTile
 0.5.0 | 24/8/2023 | use Material3 
 0.6.0 | 24/8/2023 | add barcode scanner to scan ISBN number, make publisher not mandatory
+0.6.1 | 24/8/2023 | use simple dialog to show more book details, revert hiding floating action button
+0.6.x | | for import from csv, need to clean up the strings from ' and " mark, or it'll be error on sql insert. 
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.

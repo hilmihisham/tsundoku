@@ -5,7 +5,7 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+// import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final logger = Logger();
 
   // to control showing floating action button
-  bool _showFab = true;
+  // bool _showFab = true;
 
   // all books
   List<Map<String, dynamic>> _books = [];
@@ -154,6 +154,52 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// show simple dialog for more book details when user tap ListTile
+  void _showBookDetails(BuildContext ctx, int id) async {
+    logger.i('_showBookDetails tapped for book id $id');
+
+    final selectedBook = _books.firstWhere((element) => element['id'] == id);
+    logger.i('selected book = $selectedBook');
+
+    showDialog(
+      context: ctx,
+      builder: (_) {
+        return SimpleDialog(
+          title: Text("${selectedBook['title']}"),
+          surfaceTintColor: bookListColor(selectedBook['status']),
+          children: [
+            Container(
+              padding: const EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: 20,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Title: ${selectedBook['title']}"),
+                  Text("Author: ${selectedBook['author']}"),
+                  Text("Publisher: ${selectedBook['publisher']}"),
+                  const Divider(),
+                  Text("Date of Purchase: ${selectedBook['datePurchase']}"),
+                ],
+              ),
+            ),
+            SimpleDialogOption(
+              // padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              onPressed: () {
+                logger.i('SimpleDialog OK pressed');
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -164,87 +210,88 @@ class _HomeScreenState extends State<HomeScreen> {
         ? const Center(
           child: CircularProgressIndicator(),
         )
-        : NotificationListener<UserScrollNotification>(
-            onNotification: (notification) {
-              final ScrollDirection direction = notification.direction;
-              setState(() {
-                if (direction == ScrollDirection.reverse) {
-                  _showFab = false;
-                }
-                else if (direction == ScrollDirection.forward) {
-                  _showFab = true;
-                }
-              });
-              return true;
-            },
-            child: ListView.builder(
-              // padding: const EdgeInsets.only(bottom: kFloatingActionButtonMargin + 48), // to have empty space at the bottom so not to be covered by FAB button
-              itemCount: _books.length,
-              itemBuilder:(context, index) => Card(
-                color: bookListColor(_books[index]['status']),
-                margin: const EdgeInsets.all(8.0),
-                child: ListTile(
-                  // isThreeLine: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0,),
-                  title: Text(_books[index]['title']),
-                  titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 19, color: Colors.black87,),
-                  subtitle: ('2' != _books[index]['status'])
-                    ? Text.rich(
-                        TextSpan(
-                          children: [
-                            const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
-                            TextSpan(text: ' ${_books[index]['author']}\n'),
-                            const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
-                            TextSpan(text: ' ${_books[index]['publisher']}\n'),
-                            const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
-                            TextSpan(text: ' ${_books[index]['datePurchase']}'),
-                          ],
-                        ),
-                      )
-                    : Text.rich(
-                        TextSpan(
-                          children: [
-                            const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
-                            TextSpan(text: ' ${_books[index]['author']}\n'),
-                            const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
-                            TextSpan(text: ' ${_books[index]['publisher']}\n'),
-                            const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
-                            TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
-                            const WidgetSpan(child: Icon(Icons.done_all_sharp, size: 18.0,)),
-                            TextSpan(text: ' ${_books[index]['dateFinished']}'),
-                          ],
-                        ),
+        // : NotificationListener<UserScrollNotification>(
+        //     onNotification: (notification) {
+        //       final ScrollDirection direction = notification.direction;
+        //       setState(() {
+        //         if (direction == ScrollDirection.reverse) {
+        //           _showFab = false;
+        //         }
+        //         else if (direction == ScrollDirection.forward) {
+        //           _showFab = true;
+        //         }
+        //       });
+        //       return true;
+        //     },
+        : ListView.builder(
+            padding: const EdgeInsets.only(bottom: kFloatingActionButtonMargin + 60), // to have empty space at the bottom so not to be covered by FAB button
+            itemCount: _books.length,
+            itemBuilder:(context, index) => Card(
+              color: bookListColor(_books[index]['status']),
+              margin: const EdgeInsets.all(8.0),
+              child: ListTile(
+                // isThreeLine: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0,),
+                title: Text(_books[index]['title']),
+                titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 19, color: Colors.black87,),
+                subtitle: ('2' != _books[index]['status'])
+                  ? Text.rich(
+                      TextSpan(
+                        children: [
+                          const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
+                          TextSpan(text: ' ${_books[index]['author']}\n'),
+                          const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
+                          TextSpan(text: ' ${_books[index]['publisher']}\n'),
+                          const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
+                          TextSpan(text: ' ${_books[index]['datePurchase']}'),
+                        ],
                       ),
-                  trailing: SizedBox(
-                    width: 100,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () async {
-                            var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddBookScreen(id: _books[index]['id'], book: _books[index])));
-
-                            if (result != null && result) {
-                              setState(() {
-                                _refreshBooks();
-                              });
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _deleteItem(_books[index]['id'], _books[index]['title']),
-                        ),
-                      ],
+                    )
+                  : Text.rich(
+                      TextSpan(
+                        children: [
+                          const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
+                          TextSpan(text: ' ${_books[index]['author']}\n'),
+                          const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
+                          TextSpan(text: ' ${_books[index]['publisher']}\n'),
+                          const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
+                          TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
+                          const WidgetSpan(child: Icon(Icons.done_all_sharp, size: 18.0,)),
+                          TextSpan(text: ' ${_books[index]['dateFinished']}'),
+                        ],
+                      ),
                     ),
+                trailing: SizedBox(
+                  width: 100,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () async {
+                          var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddBookScreen(id: _books[index]['id'], book: _books[index])));
+
+                          if (result != null && result) {
+                            setState(() {
+                              _refreshBooks();
+                            });
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _deleteItem(_books[index]['id'], _books[index]['title']),
+                      ),
+                    ],
                   ),
-                  onTap: () {
-                    logger.i('tapped: ${_books[index]['title']}');
-                  },
                 ),
+                onTap: () {
+                  logger.i('tapped: ${_books[index]['title']}');
+                  _showBookDetails(context, _books[index]['id']);
+                },
               ),
             ),
-        ),
+          ),
+        // ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -273,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 5.0),
-              child: ElevatedButton(
+              child: FilledButton.tonal(
                 child: const Text('Export to CSV'),
                 onPressed: () async {
                   logger.d('export to csv clicked');
@@ -298,8 +345,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       sortedBooksList[i]['status'],
                       sortedBooksList[i]['datePurchase'],
                       sortedBooksList[i]['dateFinished'],
-                      //if (sortedBooksList[i]['isbn'] != null) nullProtection = sortedBooksList[i]['isbn'],
-                      //if (sortedBooksList[i]['publisher'] != null) nullProtection = sortedBooksList[i]['publisher']
                     ];
                     // handling for new field added in db (with null value)
                     String nullProtection = '';
@@ -410,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(15.0, 0.0, 15.0, 15.0),
-              child: ElevatedButton(
+              child: FilledButton.tonal(
                 child: const Text('Import from CSV'),
                 onPressed: () async {
                   // open file picker
@@ -521,27 +566,41 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: AnimatedSlide(
-        duration: const Duration(milliseconds: 300),
-        offset: _showFab ? Offset.zero : const Offset(0.0, 2.0),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 300),
-          opacity: _showFab ? 1.0 : 0.0,
-          child: FloatingActionButton(
-            child: const Icon(Icons.add),
-            onPressed: () async {
-              var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () async {
+          var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
 
-              // to rebuild the screen if navigator pop returns true
-              if (result != null && result) {
-                setState(() {
-                  _refreshBooks();
-                });
-              }
-            },
-          ),
-        ),
-      )
+          // to rebuild the screen if navigator pop returns true
+          if (result != null && result) {
+            setState(() {
+              _refreshBooks();
+            });
+          }
+        },
+      ),
+
+      // floatingActionButton: AnimatedSlide(
+      //   duration: const Duration(milliseconds: 300),
+      //   offset: _showFab ? Offset.zero : const Offset(0.0, 2.0),
+      //   child: AnimatedOpacity(
+      //     duration: const Duration(milliseconds: 300),
+      //     opacity: _showFab ? 1.0 : 0.0,
+      //     child: FloatingActionButton(
+      //       child: const Icon(Icons.add),
+      //       onPressed: () async {
+      //         var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
+
+      //         // to rebuild the screen if navigator pop returns true
+      //         if (result != null && result) {
+      //           setState(() {
+      //             _refreshBooks();
+      //           });
+      //         }
+      //       },
+      //     ),
+      //   ),
+      // )
     );
   }
 }
