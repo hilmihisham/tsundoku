@@ -90,13 +90,17 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Book $title is deleted.'),
-          action: SnackBarAction(
-            label: 'OK', 
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
+          content: Text("Book '$title' is deleted."),
+          duration: const Duration(seconds: 4),
+          showCloseIcon: true,
+          closeIconColor: Colors.deepOrange,
+          behavior: SnackBarBehavior.floating,
+          // action: SnackBarAction(
+          //   label: 'OK', 
+          //   onPressed: () {
+          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          //   },
+          // ),
         ),
       );
     }
@@ -174,19 +178,24 @@ class _HomeScreenState extends State<HomeScreen> {
               return true;
             },
             child: ListView.builder(
+              // padding: const EdgeInsets.only(bottom: kFloatingActionButtonMargin + 48), // to have empty space at the bottom so not to be covered by FAB button
               itemCount: _books.length,
               itemBuilder:(context, index) => Card(
                 color: bookListColor(_books[index]['status']),
                 margin: const EdgeInsets.all(8.0),
                 child: ListTile(
+                  // isThreeLine: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0,),
                   title: Text(_books[index]['title']),
-                  titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 17, color: Colors.black87,),
+                  titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 19, color: Colors.black87,),
                   subtitle: ('2' != _books[index]['status'])
                     ? Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: _books[index]['author'] + '\n'),
+                            const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
+                            TextSpan(text: ' ${_books[index]['author']}\n'),
+                            const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
+                            TextSpan(text: ' ${_books[index]['publisher']}\n'),
                             const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
                             TextSpan(text: ' ${_books[index]['datePurchase']}'),
                           ],
@@ -195,10 +204,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     : Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: _books[index]['author'] + '\n'),
+                            const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
+                            TextSpan(text: ' ${_books[index]['author']}\n'),
+                            const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
+                            TextSpan(text: ' ${_books[index]['publisher']}\n'),
                             const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
                             TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
-                            const WidgetSpan(child: Icon(Icons.done_all, size: 18.0,)),
+                            const WidgetSpan(child: Icon(Icons.done_all_sharp, size: 18.0,)),
                             TextSpan(text: ' ${_books[index]['dateFinished']}'),
                           ],
                         ),
@@ -226,6 +238,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
+                  onTap: () {
+                    logger.i('tapped: ${_books[index]['title']}');
+                  },
                 ),
               ),
             ),
@@ -312,6 +327,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Unable to export to CSV - storage access permission is not granted.'),
+                            duration: Duration(seconds: 4),
+                            showCloseIcon: true,
+                            closeIconColor: Colors.deepOrange,
+                            behavior: SnackBarBehavior.floating,
                           ),
                         );
                       }
@@ -324,6 +343,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Storage access permission is now granted. Please try again to export to CSV.'),
+                            duration: Duration(seconds: 4),
+                            showCloseIcon: true,
+                            closeIconColor: Colors.deepOrange,
+                            behavior: SnackBarBehavior.floating,
                           ),
                         );
                       }
@@ -368,12 +391,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('All books data is exported at Download/$filenameCsv .'),
-                          action: SnackBarAction(
-                            label: 'OK', 
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            },
-                          ),
+                          duration: const Duration(seconds: 4),
+                          showCloseIcon: true,
+                          closeIconColor: Colors.deepOrange,
+                          behavior: SnackBarBehavior.floating,
+                          // action: SnackBarAction(
+                          //   label: 'OK', 
+                          //   onPressed: () {
+                          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          //   },
+                          // ),
                         ),
                       );
                     }
@@ -415,14 +442,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (checkPass == false && mounted) {
                       // show snack bar for confirmation
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Import cancelled. Incompatible CSV file selected.'),
-                          action: SnackBarAction(
-                            label: 'OK', 
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            },
-                          ),
+                        const SnackBar(
+                          content: Text('Import cancelled. Incompatible CSV file selected.'),
+                          duration: Duration(seconds: 4),
+                          showCloseIcon: true,
+                          closeIconColor: Colors.deepOrange,
+                          behavior: SnackBarBehavior.floating,
+                          // action: SnackBarAction(
+                          //   label: 'OK', 
+                          //   onPressed: () {
+                          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          //   },
+                          // ),
                         ),
                       );
                     }
@@ -445,14 +476,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       if ('Cancel'.compareTo(overwriteConfirm) == 0 && mounted) {
                         // show snack bar for confirmation
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Import cancelled. Books data won\'t be overwrite.'),
-                            action: SnackBarAction(
-                              label: 'OK', 
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                              },
-                            ),
+                          const SnackBar(
+                            content: Text('Import cancelled. Books data won\'t be overwrite.'),
+                            duration: Duration(seconds: 4),
+                            showCloseIcon: true,
+                            closeIconColor: Colors.deepOrange,
+                            behavior: SnackBarBehavior.floating,
+                            // action: SnackBarAction(
+                            //   label: 'OK', 
+                            //   onPressed: () {
+                            //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            //   },
+                            // ),
                           ),
                         );
                       }
@@ -462,14 +497,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         // show snack bar for confirmation
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Import completed. Books data has been updated.'),
-                              action: SnackBarAction(
-                                label: 'OK', 
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                },
-                              ),
+                            const SnackBar(
+                              content: Text('Import completed. Books data has been updated.'),
+                              duration: Duration(seconds: 4),
+                              showCloseIcon: true,
+                              closeIconColor: Colors.deepOrange,
+                              behavior: SnackBarBehavior.floating,
+                              // action: SnackBarAction(
+                              //   label: 'OK', 
+                              //   onPressed: () {
+                              //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              //   },
+                              // ),
                             ),
                           );
                         }

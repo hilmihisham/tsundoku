@@ -230,7 +230,7 @@ class _AddBookScreen extends State<AddBookScreen> {
             top: 15,
             left: 15,
             right: 15,
-            bottom: 15,
+            bottom: 60, // preventing snackbar from covering add/update button
             // bottom: MediaQuery.of(context).viewInsets.bottom + 20, // preventing soft keyboard from covering text fields
           ),
           child: Column(
@@ -270,14 +270,18 @@ class _AddBookScreen extends State<AddBookScreen> {
                     if (_isbn13Controller.text.isEmpty) {
                       // no input, no do search
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('No ISBN number entered.'),
-                          action: SnackBarAction(
-                            label: 'OK', 
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            },
-                          ),
+                        const SnackBar(
+                          content: Text('No ISBN number entered.'),
+                          duration: Duration(seconds: 4),
+                          showCloseIcon: true,
+                          closeIconColor: Colors.deepOrange,
+                          behavior: SnackBarBehavior.floating,
+                          // action: SnackBarAction(
+                          //   label: 'OK', 
+                          //   onPressed: () {
+                          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          //   },
+                          // ),
                         ),
                       );
                     }
@@ -301,14 +305,18 @@ class _AddBookScreen extends State<AddBookScreen> {
                         // no search result found, show snack bar to notify
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('No books found with that ISBN number.'),
-                              action: SnackBarAction(
-                                label: 'OK', 
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                },
-                              ),
+                            const SnackBar(
+                              content: Text('No books found with that ISBN number.'),
+                              duration: Duration(seconds: 4),
+                              showCloseIcon: true,
+                              closeIconColor: Colors.deepOrange,
+                              behavior: SnackBarBehavior.floating,
+                              // action: SnackBarAction(
+                              //   label: 'OK', 
+                              //   onPressed: () {
+                              //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              //   },
+                              // ),
                             ),
                           );
                         }
@@ -336,14 +344,18 @@ class _AddBookScreen extends State<AddBookScreen> {
                         if (searchResultConfirm.compareTo('No') == 0 && mounted) {
                           // search result is wrong
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Too bad, search result is not the book that we looking for.'),
-                              action: SnackBarAction(
-                                label: 'OK', 
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                },
-                              ),
+                            const SnackBar(
+                              content: Text('Too bad, search result is not the book that we looking for.'),
+                              duration: Duration(seconds: 4),
+                              showCloseIcon: true,
+                              closeIconColor: Colors.deepOrange,
+                              behavior: SnackBarBehavior.floating,
+                              // action: SnackBarAction(
+                              //   label: 'OK', 
+                              //   onPressed: () {
+                              //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              //   },
+                              // ),
                             ),
                           );
                         }
@@ -599,6 +611,10 @@ class _AddBookScreen extends State<AddBookScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: (widget.id == -1) ? Text("New book '${_titleController.text}' added.") : Text("Book '${_titleController.text}' is updated."),
+                            duration: const Duration(seconds: 4),
+                            showCloseIcon: true,
+                            closeIconColor: Colors.deepOrange,
+                            behavior: SnackBarBehavior.floating,
                           ),
                         );
 
