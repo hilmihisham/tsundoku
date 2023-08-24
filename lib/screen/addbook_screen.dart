@@ -394,9 +394,11 @@ class _AddBookScreen extends State<AddBookScreen> {
                           );
                         }
                         else {
-                          _titleController.text = fullTitle;
-                          _authorController.text = allAuthors;
-                          _publisherController.text = bookResult.info.publisher;
+                          setState(() {
+                            _titleController.text = fullTitle;
+                            _authorController.text = allAuthors;
+                            _publisherController.text = bookResult.info.publisher;
+                          });
                         }
                       }
                     }
