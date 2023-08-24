@@ -15,9 +15,12 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       // debugShowCheckedModeBanner: false, // remove debug banner
       title: 'tsundoku',
+      // theme: ThemeData(
+      //   primarySwatch: Colors.blueGrey,
+      // ),
       theme: ThemeData(
-        primarySwatch: Colors.blueGrey,
         useMaterial3: true,
+        colorSchemeSeed: Colors.cyan,
       ),
       // home: const HomeScreen(),
       home: const BaseScreen(),
