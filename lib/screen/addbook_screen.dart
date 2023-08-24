@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:books_finder/books_finder.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:tsundoku/util/sql_helper.dart';
@@ -29,7 +31,7 @@ class _AddBookScreen extends State<AddBookScreen> {
   bool _isDoneGetDataFromHomeScreen = false;
   bool _validateEmptyTitle = false;
   bool _validateEmptyAuthor = false;
-  bool _validateEmptyPublisher = false;
+  // bool _validateEmptyPublisher = false;
 
   int _bookStatus = 0;
 
@@ -191,6 +193,29 @@ class _AddBookScreen extends State<AddBookScreen> {
     setState(() {});
   }
 
+  /// call barcode scanner
+  Future<void> barcodeScan() async {
+    String barcodeScanResult = '-1';
+
+    try {
+      barcodeScanResult = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.BARCODE);
+      logger.i('Scanned barcode = $barcodeScanResult');
+    } 
+    on PlatformException {
+      // Platform messages may fail, so we use a try/catch PlatformException.
+      logger.e('Barcode scanner error on PlatformExeption');
+    }
+    catch (e, stack) {
+      logger.e('Barcode scanner error', time: DateTime.now(), error: e, stackTrace: stack);
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      if (barcodeScanResult.compareTo('-1') != 0) _isbn13Controller.text = barcodeScanResult;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -207,9 +232,10 @@ class _AddBookScreen extends State<AddBookScreen> {
       _bookStatus = int.parse(existingBook['status']);
       _datePurchaseController.text = existingBook['datePurchase'];
       (existingBook['dateFinished'] == null) ? _dateReadDoneController.text = '' : _dateReadDoneController.text = existingBook['dateFinished'];
-      _isForgotDateDone = false;
       if (existingBook['publisher'] != null) _publisherController.text = existingBook['publisher'];
 
+      _isForgotDateDone = false;
+      
       // flip the flag so that we won't refresh all above when screen rebuild mid-edit
       _isDoneGetDataFromHomeScreen = true;
     }
@@ -252,9 +278,17 @@ class _AddBookScreen extends State<AddBookScreen> {
                 padding: const EdgeInsets.fromLTRB(10.0, 15.0, 10.0, 10.0),
                 child: TextField(
                   controller: _isbn13Controller,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'ISBN-13 Number',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.qr_code_sharp),
+                      onPressed: () => barcodeScan(),
+                      // onPressed: () async {
+                      //   String barcodeScanResult = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.BARCODE);
+                      //   logger.i('barcode scanned: $barcodeScanResult');
+                      // },
+                    ),
                   ),
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
@@ -456,7 +490,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                           onPressed: () => _clearTextField(_publisherController),
                         )
                     ,
-                    errorText: _validateEmptyPublisher ? "ey, if no publisher then how u get this book?" : null,
+                    // errorText: _validateEmptyPublisher ? "ey, if no publisher then how u get this book?" : null,
                   ),
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
@@ -575,11 +609,11 @@ class _AddBookScreen extends State<AddBookScreen> {
                     setState(() {
                       _validateEmptyTitle = _titleController.text.isEmpty;
                       _validateEmptyAuthor = _authorController.text.isEmpty;
-                      _validateEmptyPublisher = _publisherController.text.isEmpty;
+                      // _validateEmptyPublisher = _publisherController.text.isEmpty;
                     });
                     
-                    // proceed only if all required field is not empty (_validateEmptyTitle & _validateEmptyAuthor & _validateEmptyPublisher = false)
-                    if (!_validateEmptyTitle && !_validateEmptyAuthor && !_validateEmptyPublisher) {
+                    // proceed only if all required field is not empty (_validateEmptyTitle & _validateEmptyAuthor = false)
+                    if (!_validateEmptyTitle && !_validateEmptyAuthor) {
                       // if i forgot date finish is selected
                       if (_isForgotDateDone) {
                         _dateReadDoneController.text = '';
