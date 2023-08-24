@@ -238,5 +238,30 @@ class SQLHelper {
     return result;
   }
 
+  // -------------- getter for StatsScreen ------------------
+
+  /// get all books with date purchase, date finished
+  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndFinished() async {
+    final db = await SQLHelper.db();
+    return db.rawQuery("""
+      SELECT * FROM books 
+      WHERE status = '2'
+        AND (datePurchase IS NOT NULL AND datePurchase != '')
+        AND (dateFinished IS NOT NULL AND dateFinished != '')
+      ORDER BY id
+    """);
+  }
+
+  /// get longest time to start reading
+  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndStatusNewBook() async {
+    final db = await SQLHelper.db();
+    return db.rawQuery("""
+      SELECT * FROM books 
+      WHERE status = '0'
+        AND (datePurchase IS NOT NULL AND datePurchase != '')
+      ORDER BY id
+    """);
+  }
+
 }
 

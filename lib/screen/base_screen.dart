@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tsundoku/screen/color_screen.dart';
+import 'package:tsundoku/screen/stats_screen.dart';
 import 'package:tsundoku/screen/home_screen.dart';
 
 class BaseScreen extends StatefulWidget {
@@ -38,7 +38,7 @@ class _BaseScreenState extends State<BaseScreen> {
         onPageChanged: onPageChanged,
         children: const [
           HomeScreen(),
-          ColorScreen(),
+          StatsScreen(),
         ],
       ),
       bottomNavigationBar: BottomAppBar(
