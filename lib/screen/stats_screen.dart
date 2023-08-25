@@ -15,13 +15,20 @@ class _StatsScreenState extends State<StatsScreen> {
   final logger = Logger(); 
 
   // stats variables
+  int _countBooksNew = 0;
+  int _countBooksReading = 0;
+  int _countBooksFinished = 0;
   int longestDurationDays = 0;
   int shortestDurationDays = 0;
   int longestDurationNewDays = 0;
+  int longestNowReadingDays = 0;
 
   Map<String, dynamic> longestDurationBook = {};
   Map<String, dynamic> shortestDurationBook = {};
   Map<String, dynamic> longestDurationNewBook = {};
+  Map<String, dynamic> longestNowReadingBook = {};
+
+  List<InlineSpan> longestNowReadingStatsDisplay = [];
 
   @override
   void initState() {
@@ -35,6 +42,19 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   void _getAllStats() async {
+
+    // --------------- (0) simplest stats, book count [start] ---------------
+    final countNewBooks = await SQLHelper.getCountByStatus("0");
+    _countBooksNew = countNewBooks!;
+
+    final countReadingBooks = await SQLHelper.getCountByStatus("1");
+    _countBooksReading = countReadingBooks!;
+
+    final countFinishedBooks = await SQLHelper.getCountByStatus("2");
+    _countBooksFinished = countFinishedBooks!;
+
+    logger.i("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
+    // ---------------- (0) simplest stats, book count [end] ----------------
 
     // --------------- (1) get longest time to finish [start] ---------------
     // get all books with date purchase, date finished
@@ -113,7 +133,7 @@ class _StatsScreenState extends State<StatsScreen> {
     // ---------------- (2) get shortest time to finish [end] ----------------
 
     // --------------- (3) get longest time to start reading [start] ---------------
-    final dataNewBooksWithDatePurchase = await SQLHelper.getBooksWithDatePurchaseAndStatusNewBook();
+    final dataNewBooksWithDatePurchase = await SQLHelper.getBooksWithDatePurchaseAndStatus(0);
     
     if (dataNewBooksWithDatePurchase.isNotEmpty) {
       longestDurationNewBook = dataNewBooksWithDatePurchase.first;
@@ -147,6 +167,57 @@ class _StatsScreenState extends State<StatsScreen> {
     }
     // ---------------- (3) get longest time to start reading [end] ----------------
 
+    // ----------------- (4) now reading with longest time [start] -----------------
+    final dataReadingWithDatePurchased = await SQLHelper.getBooksWithDatePurchaseAndStatus(1);
+
+    if (dataReadingWithDatePurchased.isNotEmpty) {
+      longestNowReadingBook = dataReadingWithDatePurchased.first;
+
+      if (dataReadingWithDatePurchased.length == 1) {
+        // only one book
+        longestNowReadingDays = daysBetween(DateTime.parse(longestNowReadingBook['datePurchase']), DateTime.now());
+      }
+      else {
+        // if there's more than 1 book to compare, get duration for first element first
+        longestNowReadingDays = daysBetween(DateTime.parse(longestNowReadingBook['datePurchase']), DateTime.now());
+        logger.i('now reading book: ${longestNowReadingBook['title']}, already $longestNowReadingBook days from purchased date.');
+
+        // then go through the whole list 
+        for (var i = 1; i < dataReadingWithDatePurchased.length; i++) {
+          Map<String, dynamic> nowChecking = dataReadingWithDatePurchased.elementAt(i);
+          int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.now());
+          logger.i('${nowChecking['title']}, already $nowCheckingDuration days from purchased date.');
+
+          if (nowCheckingDuration > longestNowReadingDays) {
+            longestNowReadingDays = nowCheckingDuration;
+            longestNowReadingBook = nowChecking;
+          }
+        }
+      }
+    }
+    else {
+      // no now reading book (marked with isbn -1)
+      final noBook = <String, dynamic>{'title': 'Hmm, you have no now reading books', 'author': 'not reading anything currently', 'isbn':'-1'};
+      longestNowReadingBook.addEntries(noBook.entries);      
+    }
+
+    // sets up the stats display for this category here, coz got 2 choices of what to display
+    longestNowReadingStatsDisplay.add(TextSpan(text: '${longestNowReadingBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),);
+    longestNowReadingStatsDisplay.add(const TextSpan(text: ' by '),);
+    longestNowReadingStatsDisplay.add(TextSpan(text: '${longestNowReadingBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),);
+    if (longestNowReadingBook['isbn'].compareTo('-1') != 0) {
+      // got book in now reading
+      longestNowReadingStatsDisplay.add(const TextSpan(text: 'which it has been\n'),);
+      longestNowReadingStatsDisplay.add(TextSpan(text: '$longestNowReadingDays\n', style: const TextStyle(fontSize: 35),),);
+      longestNowReadingStatsDisplay.add(const TextSpan(text: 'days since you bought it and you\'re still not finished with it yet. Let\'s get on with it now, yeah.'),);
+    }
+    else {
+      longestNowReadingStatsDisplay.add(const TextSpan(text: 'so go out there and\n'),);
+      longestNowReadingStatsDisplay.add(const TextSpan(text: 'start reading\n', style: TextStyle(fontSize: 35),),);
+      longestNowReadingStatsDisplay.add(const TextSpan(text: 'a book now, yeah. Go!'),);
+    }
+    // ------------------ (4) now reading with longest time [end] ------------------
+
     // setState to refresh all
     setState(() {});
   }
@@ -177,9 +248,32 @@ class _StatsScreenState extends State<StatsScreen> {
         padding: const EdgeInsets.all(8),
         children: <Widget>[
           Container(
-            height: 200,
-            color: Colors.green[500],
-            padding: const EdgeInsets.all(20.0),
+            color: const Color.fromARGB(255, 242, 220, 177),
+            padding: const EdgeInsets.all(50.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Your collection is currently holds', style: TextStyle(fontSize: 20),),
+                Text.rich(
+                  textAlign: TextAlign.center,
+                  TextSpan(
+                    children: [
+                      TextSpan(text: '$_countBooksNew ', style: const TextStyle(fontSize: 35, color: Colors.red, fontWeight: FontWeight.bold),),
+                      const TextSpan(text: 'new and unread books,\n'),
+                      TextSpan(text: ' $_countBooksReading ', style: const TextStyle(fontSize: 35, color: Color.fromARGB(255, 255, 160, 0), fontWeight: FontWeight.bold),),
+                      const TextSpan(text: ' books you currently reading, and\n'),
+                      TextSpan(text: '$_countBooksFinished ', style: const TextStyle(fontSize: 35, color: Colors.green, fontWeight: FontWeight.bold),),
+                      const TextSpan(text: ' books you already finished reading!'),
+                    ]
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Container(
+            color: Colors.green[400],
+            padding: const EdgeInsets.all(50.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -202,9 +296,8 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           const Divider(),
           Container(
-            height: 200,
-            color: Colors.green[300],
-            padding: const EdgeInsets.all(20.0),
+            color: Colors.green[200],
+            padding: const EdgeInsets.all(50.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -227,9 +320,8 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           const Divider(),
           Container(
-            height: 200,
             color: Colors.red[400],
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(50.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -252,9 +344,20 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           const Divider(),
           Container(
-            height: 200,
             color: Colors.amber[300],
-            child: const Center(child: Text('More stats coming soon.')),
+            padding: const EdgeInsets.all(50.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Book you taking the most time with currently', style: TextStyle(fontSize: 20),),
+                Text.rich(
+                  textAlign: TextAlign.center,
+                  TextSpan(
+                    children: longestNowReadingStatsDisplay,
+                  ),
+                ),
+              ],
+            ),
           ),
           const Divider(),
           Container(
