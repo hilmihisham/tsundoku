@@ -64,6 +64,7 @@ Version | Date | Summary
 0.6.1 | 24/8/2023 | use simple dialog to show more book details, revert hiding floating action button
 0.6.2 | 24/8/2023 | bug fix: clear icon not showing after tap OK from ISBN number, create simple stats
 0.6.3 | 26/8/2023 | bug fix: spacing on stats screen, sorting book list display, more simple stats, change some colors
+0.6.4 | 26/8/2023 | bug fix: alignment on stats screen
 0.6.x | | for import from csv, need to clean up the strings from ' and " mark, or it'll be error on sql insert. 
 
 ## ..other notes

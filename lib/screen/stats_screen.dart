@@ -200,22 +200,6 @@ class _StatsScreenState extends State<StatsScreen> {
       final noBook = <String, dynamic>{'title': 'Hmm, you have no now reading books', 'author': 'not reading anything currently', 'isbn':'-1'};
       longestNowReadingBook.addEntries(noBook.entries);      
     }
-
-    // sets up the stats display for this category here, coz got 2 choices of what to display
-    longestNowReadingStatsDisplay.add(TextSpan(text: '${longestNowReadingBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),);
-    longestNowReadingStatsDisplay.add(const TextSpan(text: ' by '),);
-    longestNowReadingStatsDisplay.add(TextSpan(text: '${longestNowReadingBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),);
-    if (longestNowReadingBook['isbn'].compareTo('-1') != 0) {
-      // got book in now reading
-      longestNowReadingStatsDisplay.add(const TextSpan(text: 'which it has been\n'),);
-      longestNowReadingStatsDisplay.add(TextSpan(text: '$longestNowReadingDays\n', style: const TextStyle(fontSize: 35),),);
-      longestNowReadingStatsDisplay.add(const TextSpan(text: 'days since you bought it and you\'re still not finished with it yet. Let\'s get on with it now, yeah.'),);
-    }
-    else {
-      longestNowReadingStatsDisplay.add(const TextSpan(text: 'so go out there and\n'),);
-      longestNowReadingStatsDisplay.add(const TextSpan(text: 'start reading\n', style: TextStyle(fontSize: 35),),);
-      longestNowReadingStatsDisplay.add(const TextSpan(text: 'a book now, yeah. Go!'),);
-    }
     // ------------------ (4) now reading with longest time [end] ------------------
 
     // setState to refresh all
@@ -249,11 +233,11 @@ class _StatsScreenState extends State<StatsScreen> {
         children: <Widget>[
           Container(
             color: const Color.fromARGB(255, 242, 220, 177),
-            padding: const EdgeInsets.all(50.0),
+            padding: const EdgeInsets.all(30.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Your collection is currently holds', style: TextStyle(fontSize: 20),),
+                const Text('Your collection is currently holds', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
                 Text.rich(
                   textAlign: TextAlign.center,
                   TextSpan(
@@ -273,11 +257,11 @@ class _StatsScreenState extends State<StatsScreen> {
           const Divider(),
           Container(
             color: Colors.green[400],
-            padding: const EdgeInsets.all(50.0),
+            padding: const EdgeInsets.all(30.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Book with longest duration to finish', style: TextStyle(fontSize: 20),),
+                const Text('Book with longest duration to finish', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
                 Text.rich(
                   textAlign: TextAlign.center,
                   TextSpan(
@@ -297,11 +281,11 @@ class _StatsScreenState extends State<StatsScreen> {
           const Divider(),
           Container(
             color: Colors.green[200],
-            padding: const EdgeInsets.all(50.0),
+            padding: const EdgeInsets.all(30.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Book with shortest duration to finish', style: TextStyle(fontSize: 20),),
+                const Text('Book with shortest duration to finish', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
                 Text.rich(
                   textAlign: TextAlign.center,
                   TextSpan(
@@ -321,11 +305,11 @@ class _StatsScreenState extends State<StatsScreen> {
           const Divider(),
           Container(
             color: Colors.red[400],
-            padding: const EdgeInsets.all(50.0),
+            padding: const EdgeInsets.all(30.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Book with longest time in tsundoku', style: TextStyle(fontSize: 20),),
+                const Text('Book with longest time in tsundoku', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
                 Text.rich(
                   textAlign: TextAlign.center,
                   TextSpan(
@@ -345,17 +329,43 @@ class _StatsScreenState extends State<StatsScreen> {
           const Divider(),
           Container(
             color: Colors.amber[300],
-            padding: const EdgeInsets.all(50.0),
+            padding: const EdgeInsets.all(30.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Book you taking the most time with currently', style: TextStyle(fontSize: 20),),
+                const Text('Book you taking the most time with currently', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
                 Text.rich(
                   textAlign: TextAlign.center,
                   TextSpan(
-                    children: longestNowReadingStatsDisplay,
+                    children: [
+                      TextSpan(text: '${longestNowReadingBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: ' by '),
+                      TextSpan(text: '${longestNowReadingBook['author']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                    ],
                   ),
                 ),
+                (longestNowReadingBook['isbn'] != '-1') 
+                  ? Text.rich(
+                      textAlign: TextAlign.center,
+                      TextSpan(
+                        children: [
+                          const TextSpan(text: 'which it has been\n'),
+                          TextSpan(text: '$longestNowReadingDays\n', style: const TextStyle(fontSize: 35),),
+                          const TextSpan(text: 'days since you bought it and you\'re still not finished with it yet. Let\'s get on with it now, yeah.'),
+                        ],
+                      ),
+                    )
+                  : const Text.rich(
+                      textAlign: TextAlign.center,
+                      TextSpan(
+                        children: [
+                          TextSpan(text: 'so go out there and\n'),
+                          TextSpan(text: 'start reading\n', style: TextStyle(fontSize: 35),),
+                          TextSpan(text: 'a book now, yeah. Go!'),
+                        ],
+                      ),
+                    )
+                ,
               ],
             ),
           ),
