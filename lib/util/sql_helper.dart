@@ -167,7 +167,8 @@ class SQLHelper {
   /// get all books status 2 (finished) order by earliest date finish first
   static Future<List<Map<String, dynamic>>> getBooksInFinishedOrder() async {
     final db = await SQLHelper.db();
-    return db.rawQuery("SELECT * FROM books WHERE status = '2' ORDER BY dateFinished DESC, datePurchase, id");
+    // note: asc will make empty date top
+    return db.rawQuery("SELECT * FROM books WHERE status = '2' ORDER BY dateFinished DESC, datePurchase DESC, author, title, id");
   }
 
   /// get book list by status
@@ -252,12 +253,13 @@ class SQLHelper {
     """);
   }
 
-  /// get longest time to start reading
-  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndStatusNewBook() async {
+  /// get longest time to start reading (status 0)
+  /// now reading with longest time (status 1)
+  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndStatus(int status) async {
     final db = await SQLHelper.db();
     return db.rawQuery("""
       SELECT * FROM books 
-      WHERE status = '0'
+      WHERE status = '$status'
         AND (datePurchase IS NOT NULL AND datePurchase != '')
       ORDER BY id
     """);
