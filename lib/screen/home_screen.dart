@@ -297,12 +297,13 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.teal,),
+              decoration: BoxDecoration(color: Color.fromRGBO(141, 166, 131, 1.0),),
               child: Text(
                 'tsundoku\n積ん読',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w500
                 ),
               ),
             ),

@@ -42,7 +42,7 @@ class _BaseScreenState extends State<BaseScreen> {
         ],
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Theme.of(context).primaryColor,
+        // color: Theme.of(context).primaryColor,
         // shape: const CircularNotchedRectangle(), // create notch in bottomappbar
         // notchMargin: 6.0,
         child: Row(
@@ -50,7 +50,7 @@ class _BaseScreenState extends State<BaseScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const SizedBox(width: 7.0,),
-            barIcon(icon: Icons.home, page: 0,),
+            barIcon(icon: Icons.home_sharp, page: 0,),
             barIcon(icon: Icons.leaderboard_sharp, page: 1),
             const SizedBox(width: 7.0,),
           ],
@@ -71,9 +71,9 @@ class _BaseScreenState extends State<BaseScreen> {
 
   Widget barIcon({IconData icon = Icons.home, int page = 0}) {
     return IconButton(
-      icon: Icon(icon, size: 24.0),
+      icon: Icon(icon, size: 30.0),
       color:
-          _page == page ? Colors.white : Colors.blueGrey[300],
+          _page == page ? const Color.fromRGBO(204, 88, 84, 1.0) : const Color.fromRGBO(255, 238, 173, 1.0),
       onPressed: () => _pageController.jumpToPage(page),
     );
   }
