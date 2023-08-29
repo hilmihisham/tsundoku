@@ -119,6 +119,13 @@ class SQLHelper {
   static Future<int> insertMultiple(List<List> books) async {
     // logger
     final logger = Logger();
+
+    // regex
+    // '''[ to start expression
+    // anything inside is the symbol we need to check
+    // ]''' to end expression
+    final regex = RegExp(r'''[']''');
+    const String apostropheReplacement = '\'\''; // for sqlite, use double apostrophe to escape
     
     final db = await SQLHelper.db();
 
@@ -131,7 +138,17 @@ class SQLHelper {
       buffer.write("('");
       buffer.write(book.elementAt(0)); // id
       buffer.write("', '");
-      buffer.write(book.elementAt(1)); // title
+
+      if (book.elementAt(1).toString().contains(regex)) {
+        String titleString = book.elementAt(1); // title
+        String titleStringNew = titleString.replaceAll(regex, apostropheReplacement);
+        logger.d('new titleString = $titleStringNew');
+        buffer.write(titleStringNew);
+      }
+      else {
+        buffer.write(book.elementAt(1)); // title
+      }
+      
       buffer.write("', '");
       buffer.write(book.elementAt(2)); // author
       buffer.write("', '");
@@ -146,7 +163,7 @@ class SQLHelper {
       buffer.write(book.elementAt(7)); // publisher
       buffer.write("')");
     }
-    logger.d('buffer = $buffer');
+    logger.d('INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}');
 
     var raw = await db.rawInsert("INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}");
     return raw;

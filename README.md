@@ -66,7 +66,7 @@ Version | Date | Summary
 0.6.3 | 26/8/2023 | bug fix: spacing on stats screen, sorting book list display, more simple stats, change some colors
 0.6.4 | 26/8/2023 | bug fix: alignment on stats screen
 0.6.5 | 29/8/2023 | more simple stats (frequently updated stats for more fun looking at different things), stats reordering
-0.6.x | | for import from csv, need to clean up the strings from ' and " mark, or it'll be error on sql insert. 
+0.6.6 | 29/8/2023 | for import from csv, need to clean up the strings from ' and " mark, or it'll be error on sql insert (currently sanitize for title field only). 
 
 ## ..other notes
 Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
