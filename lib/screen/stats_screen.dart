@@ -22,13 +22,15 @@ class _StatsScreenState extends State<StatsScreen> {
   int shortestDurationDays = 0;
   int longestDurationNewDays = 0;
   int longestNowReadingDays = 0;
+  int latestBoughtDays = 0;
+  int latestFinishedDays = 0;
 
   Map<String, dynamic> longestDurationBook = {};
   Map<String, dynamic> shortestDurationBook = {};
   Map<String, dynamic> longestDurationNewBook = {};
   Map<String, dynamic> longestNowReadingBook = {};
-
-  List<InlineSpan> longestNowReadingStatsDisplay = [];
+  Map<String, dynamic> latestBoughtBook = {};
+  Map<String, dynamic> latestFinishedBook = {};
 
   @override
   void initState() {
@@ -56,6 +58,49 @@ class _StatsScreenState extends State<StatsScreen> {
     logger.i("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
     // ---------------- (0) simplest stats, book count [end] ----------------
 
+    // --------------- (0.1) latest book bought and finished [start] ---------------
+    final dataLatestBoughtAndFinished = await SQLHelper.getLatestBooksInEachStatus();
+    logger.i('0.1\n\n$dataLatestBoughtAndFinished');
+
+    // sort the query result
+    if (dataLatestBoughtAndFinished.isNotEmpty) {
+
+      for (var element in dataLatestBoughtAndFinished) {
+        if (element['status'] == '0') {
+          latestBoughtBook.addAll(element);
+          latestBoughtDays = daysBetween(DateTime.parse(element['datePurchase']), DateTime.now());
+          logger.d('latest bought book = $latestBoughtBook');
+        }
+
+        if (element['status'] == '2') {
+          latestFinishedBook.addAll(element);
+          latestFinishedDays = daysBetween(DateTime.parse(element['dateFinished']), DateTime.now());
+          logger.d('latest finished book = $latestFinishedBook');
+        }
+      }
+
+      // check if there's no latest bought or latest finished book
+      if (latestBoughtBook.isEmpty) {
+        final noBookBought = <String, dynamic>{'title': 'Nope, no new book in collection', 'author': 'no one', 'datePurchase':'non-existent date', 'isbn':'-1'};
+        latestBoughtBook.addEntries(noBookBought.entries);
+        logger.d('latest bought book = $latestBoughtBook');
+      }
+      if (latestFinishedBook.isEmpty) {
+        final noBookFinished = <String, dynamic>{'title': 'Nope, nothing is finished yet', 'author': 'no one', 'dateFinished':'non-existent date', 'isbn':'-1'};
+        latestFinishedBook.addEntries(noBookFinished.entries);
+        logger.d('latest finished book = $latestFinishedBook');
+      }
+    }
+    else {
+      // no data
+      final noBookBought = <String, dynamic>{'title': 'Nope, no new book in collection', 'author': 'no one', 'datePurchase':'non-existent date', 'isbn':'-1'};
+      latestBoughtBook.addEntries(noBookBought.entries);
+
+      final noBookFinished = <String, dynamic>{'title': 'Nope, nothing is finished yet', 'author': 'no one', 'dateFinished':'non-existent date', 'isbn':'-1'};
+      latestFinishedBook.addEntries(noBookFinished.entries);
+    }
+    // ---------------- (0.1) latest book bought and finished [end] ----------------
+
     // --------------- (1) get longest time to finish [start] ---------------
     // get all books with date purchase, date finished
     final dataWithDatePurchasedAndFinished = await SQLHelper.getBooksWithDatePurchaseAndFinished();
@@ -72,13 +117,13 @@ class _StatsScreenState extends State<StatsScreen> {
       else {
         // if there's more than 1 book to compare, get duration for first element first
         longestDurationDays = daysBetween(DateTime.parse(longestDurationBook['datePurchase']), DateTime.parse(longestDurationBook['dateFinished']));
-        logger.i('to finish: ${longestDurationBook['title']}, $longestDurationDays days.');
+        // logger.i('to finish: ${longestDurationBook['title']}, $longestDurationDays days.');
 
         // then go through the whole list 
         for (var i = 1; i < dataWithDatePurchasedAndFinished.length; i++) {
           Map<String, dynamic> nowChecking = dataWithDatePurchasedAndFinished.elementAt(i);
           int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.parse(nowChecking['dateFinished']));
-          logger.i('${nowChecking['title']}, $nowCheckingDuration days.');
+          // logger.i('${nowChecking['title']}, $nowCheckingDuration days.');
 
           if (nowCheckingDuration > longestDurationDays) {
             longestDurationDays = nowCheckingDuration;
@@ -108,13 +153,13 @@ class _StatsScreenState extends State<StatsScreen> {
       else {
         // if there's more than 1 book to compare, get duration for first element first
         shortestDurationDays = daysBetween(DateTime.parse(shortestDurationBook['datePurchase']), DateTime.parse(shortestDurationBook['dateFinished']));
-        logger.i('to finish: ${shortestDurationBook['title']}, $shortestDurationBook days.');
+        // logger.i('to finish: ${shortestDurationBook['title']}, $shortestDurationBook days.');
 
         // then go through the whole list 
         for (var i = 1; i < dataWithDatePurchasedAndFinished.length; i++) {
           Map<String, dynamic> nowChecking = dataWithDatePurchasedAndFinished.elementAt(i);
           int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.parse(nowChecking['dateFinished']));
-          logger.i('${nowChecking['title']}, $nowCheckingDuration days.');
+          // logger.i('${nowChecking['title']}, $nowCheckingDuration days.');
 
           if (nowCheckingDuration < shortestDurationDays) {
             shortestDurationDays = nowCheckingDuration;
@@ -145,13 +190,13 @@ class _StatsScreenState extends State<StatsScreen> {
       else {
         // if there's more than 1 book to compare, get duration for first element first
         longestDurationNewDays = daysBetween(DateTime.parse(longestDurationNewBook['datePurchase']), DateTime.now());
-        logger.i('new book: ${longestDurationNewBook['title']}, already $longestDurationNewBook days.');
+        // logger.i('new book: ${longestDurationNewBook['title']}, already $longestDurationNewBook days.');
 
         // then go through the whole list 
         for (var i = 1; i < dataNewBooksWithDatePurchase.length; i++) {
           Map<String, dynamic> nowChecking = dataNewBooksWithDatePurchase.elementAt(i);
           int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.now());
-          logger.i('${nowChecking['title']}, already $nowCheckingDuration days.');
+          // logger.i('${nowChecking['title']}, already $nowCheckingDuration days.');
 
           if (nowCheckingDuration > longestDurationNewDays) {
             longestDurationNewDays = nowCheckingDuration;
@@ -180,13 +225,13 @@ class _StatsScreenState extends State<StatsScreen> {
       else {
         // if there's more than 1 book to compare, get duration for first element first
         longestNowReadingDays = daysBetween(DateTime.parse(longestNowReadingBook['datePurchase']), DateTime.now());
-        logger.i('now reading book: ${longestNowReadingBook['title']}, already $longestNowReadingBook days from purchased date.');
+        // logger.i('now reading book: ${longestNowReadingBook['title']}, already $longestNowReadingBook days from purchased date.');
 
         // then go through the whole list 
         for (var i = 1; i < dataReadingWithDatePurchased.length; i++) {
           Map<String, dynamic> nowChecking = dataReadingWithDatePurchased.elementAt(i);
           int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.now());
-          logger.i('${nowChecking['title']}, already $nowCheckingDuration days from purchased date.');
+          // logger.i('${nowChecking['title']}, already $nowCheckingDuration days from purchased date.');
 
           if (nowCheckingDuration > longestNowReadingDays) {
             longestNowReadingDays = nowCheckingDuration;
@@ -256,22 +301,24 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           const Divider(),
           Container(
-            color: Colors.green[400],
+            color: Colors.red[500],
             padding: const EdgeInsets.all(30.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Book with longest duration to finish', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
+                const Text('Latest book purchased', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
                 Text.rich(
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${longestDurationBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestBoughtBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${longestDurationBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
-                      const TextSpan(text: 'totalling\n'),
-                      TextSpan(text: '$longestDurationDays\n', style: const TextStyle(fontSize: 35),),
-                      const TextSpan(text: 'days to finish.'),
+                      TextSpan(text: '${latestBoughtBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: 'was purchased on '),
+                      TextSpan(text: '${latestBoughtBook['datePurchase']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: ',\n'),
+                      TextSpan(text: '$latestBoughtDays\n', style: const TextStyle(fontSize: 35),),
+                      const TextSpan(text: 'days ago.'),
                     ]
                   ),
                 ),
@@ -280,29 +327,31 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           const Divider(),
           Container(
-            color: Colors.green[200],
+            color: Colors.green[600],
             padding: const EdgeInsets.all(30.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Book with shortest duration to finish', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
+                const Text('Latest finished reading book', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
                 Text.rich(
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${shortestDurationBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestFinishedBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${shortestDurationBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
-                      const TextSpan(text: 'taking just\n'),
-                      TextSpan(text: '$shortestDurationDays\n', style: const TextStyle(fontSize: 35),),
-                      const TextSpan(text: 'days to finish.'),
+                      TextSpan(text: '${latestFinishedBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: 'was done read on '),
+                      TextSpan(text: '${latestFinishedBook['dateFinished']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: ',\n'),
+                      TextSpan(text: '$latestFinishedDays\n', style: const TextStyle(fontSize: 35),),
+                      const TextSpan(text: 'days ago.'),
                     ]
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(),
+          const Divider(height: 30.0, thickness: 4.0,),
           Container(
             color: Colors.red[400],
             padding: const EdgeInsets.all(30.0),
@@ -366,6 +415,54 @@ class _StatsScreenState extends State<StatsScreen> {
                       ),
                     )
                 ,
+              ],
+            ),
+          ),
+          const Divider(),
+          Container(
+            color: Colors.green[400],
+            padding: const EdgeInsets.all(30.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Book with longest duration to finish', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
+                Text.rich(
+                  textAlign: TextAlign.center,
+                  TextSpan(
+                    children: [
+                      TextSpan(text: '${longestDurationBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: ' by '),
+                      TextSpan(text: '${longestDurationBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: 'totalling\n'),
+                      TextSpan(text: '$longestDurationDays\n', style: const TextStyle(fontSize: 35),),
+                      const TextSpan(text: 'days to finish.'),
+                    ]
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Container(
+            color: Colors.green[200],
+            padding: const EdgeInsets.all(30.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Book with shortest duration to finish', style: TextStyle(fontSize: 20,), textAlign: TextAlign.center,),
+                Text.rich(
+                  textAlign: TextAlign.center,
+                  TextSpan(
+                    children: [
+                      TextSpan(text: '${shortestDurationBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: ' by '),
+                      TextSpan(text: '${shortestDurationBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      const TextSpan(text: 'taking just\n'),
+                      TextSpan(text: '$shortestDurationDays\n', style: const TextStyle(fontSize: 35),),
+                      const TextSpan(text: 'days to finish.'),
+                    ]
+                  ),
+                ),
               ],
             ),
           ),

@@ -265,5 +265,32 @@ class SQLHelper {
     """);
   }
 
+  /// get latest book in each category
+  /// (since query is union, so we need to use subquery (coz got ORDER BY) to eliminate error wrong clause order)
+  static Future<List<Map<String, dynamic>>> getLatestBooksInEachStatus() async {
+    final db = await SQLHelper.db();
+    return db.rawQuery("""
+      SELECT * 
+      FROM (
+            SELECT * FROM books 
+            WHERE status = '0'
+              AND (datePurchase IS NOT NULL AND datePurchase != '')
+            ORDER BY datePurchase DESC
+            LIMIT 1
+      )
+
+      UNION
+
+      SELECT * 
+      FROM (
+            SELECT * FROM books 
+            WHERE status = '2'
+              AND (dateFinished IS NOT NULL AND dateFinished != '')
+            ORDER BY dateFinished DESC
+            LIMIT 1
+      )
+    """);
+  }
+
 }
 
