@@ -16,7 +16,7 @@ The old forked design was too complicated to maintain after upgrading to flutter
 ## Download
 It's 7th August 2025, and tsundoku v0.7.0 apk is now here!!!
 
-:package:
+:package: [tsundoku-v0.7.0.apk](https://github.com/hilmihisham/tsundoku/releases/tag/v0.7.0)
 
 ## Does it work?
 Short answer: Yes.
