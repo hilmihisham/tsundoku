@@ -2,7 +2,6 @@ import 'package:logger/logger.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 
 class SQLHelper {
-
   static Future<void> createTables(sql.Database database) async {
     await database.execute("""CREATE TABLE books(
       id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -17,7 +16,7 @@ class SQLHelper {
     )
     """);
   }
-  
+
   // static Future<void> createTables(sql.Database database) async {
   //   await database.execute("""CREATE TABLE books(
   //     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -94,8 +93,13 @@ class SQLHelper {
 
   /// input new book into db
   static Future<int> inputBook(
-    String title, String? author, String? status, String? datePurchase, String? dateFinished, String? isbn, String? publisher
-  ) async {
+      String title,
+      String? author,
+      String? status,
+      String? datePurchase,
+      String? dateFinished,
+      String? isbn,
+      String? publisher) async {
     final db = await SQLHelper.db();
 
     final data = {
@@ -110,8 +114,8 @@ class SQLHelper {
     };
 
     final id = await db.insert('books', data,
-      conflictAlgorithm: sql.ConflictAlgorithm.replace);
-    
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
+
     return id;
   }
 
@@ -125,12 +129,13 @@ class SQLHelper {
     // anything inside is the symbol we need to check
     // ]''' to end expression
     final regex = RegExp(r'''[']''');
-    const String apostropheReplacement = '\'\''; // for sqlite, use double apostrophe to escape
-    
+    const String apostropheReplacement =
+        '\'\''; // for sqlite, use double apostrophe to escape
+
     final db = await SQLHelper.db();
 
     var buffer = StringBuffer();
-    for (var book in books) { 
+    for (var book in books) {
       if (buffer.isNotEmpty) {
         buffer.write(",\n");
       }
@@ -141,14 +146,14 @@ class SQLHelper {
 
       if (book.elementAt(1).toString().contains(regex)) {
         String titleString = book.elementAt(1); // title
-        String titleStringNew = titleString.replaceAll(regex, apostropheReplacement);
+        String titleStringNew =
+            titleString.replaceAll(regex, apostropheReplacement);
         logger.d('new titleString = $titleStringNew');
         buffer.write(titleStringNew);
-      }
-      else {
+      } else {
         buffer.write(book.elementAt(1)); // title
       }
-      
+
       buffer.write("', '");
       buffer.write(book.elementAt(2)); // author
       buffer.write("', '");
@@ -163,9 +168,11 @@ class SQLHelper {
       buffer.write(book.elementAt(7)); // publisher
       buffer.write("')");
     }
-    logger.d('INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}');
+    logger.d(
+        'INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}');
 
-    var raw = await db.rawInsert("INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}");
+    var raw = await db.rawInsert(
+        "INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}");
     return raw;
   }
 
@@ -178,20 +185,24 @@ class SQLHelper {
   /// get all books status 0 and 1
   static Future<List<Map<String, dynamic>>> getBooksNewAndReading() async {
     final db = await SQLHelper.db();
-    return db.rawQuery("SELECT * FROM books WHERE status IN ('0', '1') ORDER BY status, datePurchase, id");
+    return db.rawQuery(
+        "SELECT * FROM books WHERE status IN ('0', '1') ORDER BY status, datePurchase, id");
   }
 
   /// get all books status 2 (finished) order by earliest date finish first
   static Future<List<Map<String, dynamic>>> getBooksInFinishedOrder() async {
     final db = await SQLHelper.db();
     // note: asc will make empty date top
-    return db.rawQuery("SELECT * FROM books WHERE status = '2' ORDER BY dateFinished DESC, datePurchase DESC, author, title, id");
+    return db.rawQuery(
+        "SELECT * FROM books WHERE status = '2' ORDER BY dateFinished DESC, datePurchase DESC, author, title, id");
   }
 
   /// get book list by status
-  static Future<List<Map<String, dynamic>>> getBooksByStatus(String status) async {
+  static Future<List<Map<String, dynamic>>> getBooksByStatus(
+      String status) async {
     final db = await SQLHelper.db();
-    return db.query('books', where: "status = ?", whereArgs: [status], orderBy: "datePurchase");
+    return db.query('books',
+        where: "status = ?", whereArgs: [status], orderBy: "datePurchase");
   }
 
   /// get a book by id
@@ -203,14 +214,21 @@ class SQLHelper {
   /// get count based on book status
   static Future<int?> getCountByStatus(String status) async {
     final db = await SQLHelper.db();
-    int? count = sql.Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM books WHERE status = $status'));
+    int? count = sql.Sqflite.firstIntValue(
+        await db.rawQuery('SELECT COUNT(*) FROM books WHERE status = $status'));
     return count;
   }
 
   /// update a book by id
   static Future<int> updateBook(
-    int id, String title, String? author, String? status, String? datePurchase, String? dateFinished, String? isbn, String? publisher
-  ) async {
+      int id,
+      String title,
+      String? author,
+      String? status,
+      String? datePurchase,
+      String? dateFinished,
+      String? isbn,
+      String? publisher) async {
     final db = await SQLHelper.db();
 
     final data = {
@@ -223,7 +241,8 @@ class SQLHelper {
       'publisher': publisher,
     };
 
-    final result = await db.update('books', data, where: "id = ?", whereArgs: [id]);
+    final result =
+        await db.update('books', data, where: "id = ?", whereArgs: [id]);
 
     return result;
   }
@@ -237,7 +256,10 @@ class SQLHelper {
     try {
       await db.delete("books", where: "id = ?", whereArgs: [id]);
     } catch (e) {
-      logger.e("Error deleting a book: $e", error: 'Error',);
+      logger.e(
+        "Error deleting a book: $e",
+        error: 'Error',
+      );
     }
   }
 
@@ -251,7 +273,10 @@ class SQLHelper {
     try {
       result = await db.delete("books");
     } catch (e) {
-      logger.e("Error deleting all books: $e", error: 'Error',);
+      logger.e(
+        "Error deleting all books: $e",
+        error: 'Error',
+      );
     }
     return result;
   }
@@ -259,7 +284,8 @@ class SQLHelper {
   // -------------- getter for StatsScreen ------------------
 
   /// get all books with date purchase, date finished
-  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndFinished() async {
+  static Future<List<Map<String, dynamic>>>
+      getBooksWithDatePurchaseAndFinished() async {
     final db = await SQLHelper.db();
     return db.rawQuery("""
       SELECT * FROM books 
@@ -272,7 +298,8 @@ class SQLHelper {
 
   /// get longest time to start reading (status 0)
   /// now reading with longest time (status 1)
-  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndStatus(int status) async {
+  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndStatus(
+      int status) async {
     final db = await SQLHelper.db();
     return db.rawQuery("""
       SELECT * FROM books 
@@ -309,5 +336,13 @@ class SQLHelper {
     """);
   }
 
-}
+  // -------------- getter for SearchScreen ------------------
 
+  /// get all books that contains the searched title
+  static Future<List<Map<String, dynamic>>> getBooksByTitleSearch(
+      String title) async {
+    final db = await SQLHelper.db();
+    return db.rawQuery(
+        "SELECT * FROM books WHERE title LIKE '%$title%' ORDER BY status, datePurchase, id");
+  }
+}
