@@ -9,10 +9,14 @@ A simple flutter app to make a record and save all the data of your physical boo
 The old forked design was too complicated to maintain after upgrading to flutter 3.0 (null safety confusing as heck), so I created a new one from scratch. Plus, this one I've decided to implement the use of SQLite from the get go as well, and starting it again bit by bit, one feature at a time.
 
 ## Screenshot
-I'll put one later if I remember.
+| Screenshot #1 | Screenshot #2 |
+| :---: | :---: |
+| <img src="https://private-user-images.githubusercontent.com/30010044/475592719-72cf6cd3-9f42-4f58-beb3-0b2f976df18a.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NTQ1NzM2NzEsIm5iZiI6MTc1NDU3MzM3MSwicGF0aCI6Ii8zMDAxMDA0NC80NzU1OTI3MTktNzJjZjZjZDMtOWY0Mi00ZjU4LWJlYjMtMGIyZjk3NmRmMThhLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA4MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwODA3VDEzMjkzMVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWY4ZDFkMDBkNjNjOWMyMTUxYzUxNGUxYjEyMzY5MjhjMjVhNmNlYzQzNGEzNGEzZjkwNGQzZmE4NDBkOGUzNzQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.s1DDcAlz5UNTyK90-q9o3-s96mGK7YhrmqcqEM5flRw" alt="Screenshot from v0.7.0 #1" style="width:30%; height:auto;"> | <img src="https://private-user-images.githubusercontent.com/30010044/475592718-b0c1a7ad-7079-4f2b-82c9-3bc1590c8bb8.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NTQ1NzQzMjcsIm5iZiI6MTc1NDU3NDAyNywicGF0aCI6Ii8zMDAxMDA0NC80NzU1OTI3MTgtYjBjMWE3YWQtNzA3OS00ZjJiLTgyYzktM2JjMTU5MGM4YmI4LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA4MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwODA3VDEzNDAyN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTIzODUyZGVmOTYxMDJjZjZlYzJlZjFlYmZlNzNhMzFkYjM4NWJmMjI5YjExOWFiYWExNDgxZTk2ODcxMWYwNTMmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.5zL1HTb8V8sLT5TBfJkbRzlSlg6jkIqnnWnE2q8tPWM" alt="Screenshot from v0.7.0 #2" style="width:30%; height:auto;"> |
 
 ## Download
-Soon.
+It's 7th August 2025, and tsundoku v0.7.0 apk is now here!!!
+
+:package:
 
 ## Does it work?
 Short answer: Yes.
