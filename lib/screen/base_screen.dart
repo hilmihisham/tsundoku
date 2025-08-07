@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tsundoku/screen/search_screen.dart';
 import 'package:tsundoku/screen/stats_screen.dart';
 import 'package:tsundoku/screen/home_screen.dart';
 
@@ -25,7 +26,6 @@ class _BaseScreenState extends State<BaseScreen> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,6 +39,7 @@ class _BaseScreenState extends State<BaseScreen> {
         children: const [
           HomeScreen(),
           StatsScreen(),
+          SearchScreen(),
         ],
       ),
       bottomNavigationBar: BottomAppBar(
@@ -49,10 +50,18 @@ class _BaseScreenState extends State<BaseScreen> {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const SizedBox(width: 7.0,),
-            barIcon(icon: Icons.home_sharp, page: 0,),
+            const SizedBox(
+              width: 7.0,
+            ),
+            barIcon(
+              icon: Icons.home_sharp,
+              page: 0,
+            ),
             barIcon(icon: Icons.leaderboard_sharp, page: 1),
-            const SizedBox(width: 7.0,),
+            barIcon(icon: Icons.search_sharp, page: 2),
+            const SizedBox(
+              width: 7.0,
+            ),
           ],
         ),
       ),
@@ -72,11 +81,10 @@ class _BaseScreenState extends State<BaseScreen> {
   Widget barIcon({IconData icon = Icons.home, int page = 0}) {
     return IconButton(
       icon: Icon(icon, size: 30.0),
-      color:
-          _page == page ? const Color.fromRGBO(204, 88, 84, 1.0) : const Color.fromRGBO(255, 238, 173, 1.0),
+      color: _page == page
+          ? const Color.fromRGBO(204, 88, 84, 1.0)
+          : const Color.fromRGBO(255, 238, 173, 1.0),
       onPressed: () => _pageController.jumpToPage(page),
     );
   }
-
 }
-

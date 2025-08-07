@@ -63,7 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final countFinishedBooks = await SQLHelper.getCountByStatus("2");
     _countBooksFinished = countFinishedBooks!;
 
-    logger.i("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
+    logger.i(
+        "new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
 
     setState(() {
       //_books = data;
@@ -96,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
           closeIconColor: Colors.deepOrange,
           behavior: SnackBarBehavior.floating,
           // action: SnackBarAction(
-          //   label: 'OK', 
+          //   label: 'OK',
           //   onPressed: () {
           //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
           //   },
@@ -119,9 +120,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Color bookListColor(String status) {
-    
     Color result = Colors.grey;
-    
+
     switch (status) {
       case "0":
         result = Colors.red.shade400;
@@ -140,7 +140,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget alertForOverwrite() {
     return AlertDialog(
       title: const Text('Import from CSV'),
-      content: const Text('Current book list is not empty in the database. Overwrite the list?'),
+      content: const Text(
+          'Current book list is not empty in the database. Overwrite the list?'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, 'Cancel'),
@@ -162,42 +163,41 @@ class _HomeScreenState extends State<HomeScreen> {
     logger.i('selected book = $selectedBook');
 
     showDialog(
-      context: ctx,
-      builder: (_) {
-        return SimpleDialog(
-          title: Text("${selectedBook['title']}"),
-          surfaceTintColor: bookListColor(selectedBook['status']),
-          children: [
-            Container(
-              padding: const EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: 20,
+        context: ctx,
+        builder: (_) {
+          return SimpleDialog(
+            title: Text("${selectedBook['title']}"),
+            surfaceTintColor: bookListColor(selectedBook['status']),
+            children: [
+              Container(
+                padding: const EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Title: ${selectedBook['title']}"),
+                    Text("Author: ${selectedBook['author']}"),
+                    Text("Publisher: ${selectedBook['publisher']}"),
+                    const Divider(),
+                    Text("Date of Purchase: ${selectedBook['datePurchase']}"),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Title: ${selectedBook['title']}"),
-                  Text("Author: ${selectedBook['author']}"),
-                  Text("Publisher: ${selectedBook['publisher']}"),
-                  const Divider(),
-                  Text("Date of Purchase: ${selectedBook['datePurchase']}"),
-                ],
+              SimpleDialogOption(
+                // padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                onPressed: () {
+                  logger.i('SimpleDialog OK pressed');
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('OK'),
               ),
-            ),
-            SimpleDialogOption(
-              // padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-              onPressed: () {
-                logger.i('SimpleDialog OK pressed');
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      }
-    );
+            ],
+          );
+        });
   }
 
   @override
@@ -207,116 +207,173 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('tsundoku'),
       ),
       body: _isLoading
-        ? const Center(
-          child: CircularProgressIndicator(),
-        )
-        // : NotificationListener<UserScrollNotification>(
-        //     onNotification: (notification) {
-        //       final ScrollDirection direction = notification.direction;
-        //       setState(() {
-        //         if (direction == ScrollDirection.reverse) {
-        //           _showFab = false;
-        //         }
-        //         else if (direction == ScrollDirection.forward) {
-        //           _showFab = true;
-        //         }
-        //       });
-        //       return true;
-        //     },
-        : ListView.builder(
-            padding: const EdgeInsets.only(bottom: kFloatingActionButtonMargin + 60), // to have empty space at the bottom so not to be covered by FAB button
-            itemCount: _books.length,
-            itemBuilder:(context, index) => Card(
-              color: bookListColor(_books[index]['status']),
-              margin: const EdgeInsets.all(8.0),
-              child: ListTile(
-                // isThreeLine: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0,),
-                title: Text(_books[index]['title']),
-                titleTextStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 19, color: Colors.black87,),
-                subtitle: ('2' != _books[index]['status'])
-                  ? Text.rich(
-                      TextSpan(
-                        children: [
-                          const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
-                          TextSpan(text: ' ${_books[index]['author']}\n'),
-                          const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
-                          TextSpan(text: ' ${_books[index]['publisher']}\n'),
-                          const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
-                          TextSpan(text: ' ${_books[index]['datePurchase']}'),
-                        ],
-                      ),
-                    )
-                  : Text.rich(
-                      TextSpan(
-                        children: [
-                          const WidgetSpan(child: Icon(Icons.account_circle_sharp, size: 18.0,)),
-                          TextSpan(text: ' ${_books[index]['author']}\n'),
-                          const WidgetSpan(child: Icon(Icons.storefront_sharp, size: 18.0,)),
-                          TextSpan(text: ' ${_books[index]['publisher']}\n'),
-                          const WidgetSpan(child: Icon(Icons.shopping_cart_sharp, size: 18.0,)),
-                          TextSpan(text: ' ${_books[index]['datePurchase']} \n'),
-                          const WidgetSpan(child: Icon(Icons.done_all_sharp, size: 18.0,)),
-                          TextSpan(text: ' ${_books[index]['dateFinished']}'),
-                        ],
-                      ),
-                    ),
-                trailing: SizedBox(
-                  width: 100,
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () async {
-                          var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddBookScreen(id: _books[index]['id'], book: _books[index])));
-
-                          if (result != null && result) {
-                            setState(() {
-                              _refreshBooks();
-                            });
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _deleteItem(_books[index]['id'], _books[index]['title']),
-                      ),
-                    ],
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          // : NotificationListener<UserScrollNotification>(
+          //     onNotification: (notification) {
+          //       final ScrollDirection direction = notification.direction;
+          //       setState(() {
+          //         if (direction == ScrollDirection.reverse) {
+          //           _showFab = false;
+          //         }
+          //         else if (direction == ScrollDirection.forward) {
+          //           _showFab = true;
+          //         }
+          //       });
+          //       return true;
+          //     },
+          : ListView.builder(
+              padding: const EdgeInsets.only(
+                  bottom: kFloatingActionButtonMargin +
+                      60), // to have empty space at the bottom so not to be covered by FAB button
+              itemCount: _books.length,
+              itemBuilder: (context, index) => Card(
+                color: bookListColor(_books[index]['status']),
+                margin: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  // isThreeLine: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 8.0,
+                    horizontal: 15.0,
                   ),
+                  title: Text(_books[index]['title']),
+                  titleTextStyle: const TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 19,
+                    color: Colors.black87,
+                  ),
+                  subtitle: ('2' != _books[index]['status'])
+                      ? Text.rich(
+                          TextSpan(
+                            children: [
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.account_circle_sharp,
+                                size: 18.0,
+                              )),
+                              TextSpan(text: ' ${_books[index]['author']}\n'),
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.storefront_sharp,
+                                size: 18.0,
+                              )),
+                              TextSpan(
+                                  text: ' ${_books[index]['publisher']}\n'),
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.shopping_cart_sharp,
+                                size: 18.0,
+                              )),
+                              TextSpan(
+                                  text: ' ${_books[index]['datePurchase']}'),
+                            ],
+                          ),
+                        )
+                      : Text.rich(
+                          TextSpan(
+                            children: [
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.account_circle_sharp,
+                                size: 18.0,
+                              )),
+                              TextSpan(text: ' ${_books[index]['author']}\n'),
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.storefront_sharp,
+                                size: 18.0,
+                              )),
+                              TextSpan(
+                                  text: ' ${_books[index]['publisher']}\n'),
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.shopping_cart_sharp,
+                                size: 18.0,
+                              )),
+                              TextSpan(
+                                  text: ' ${_books[index]['datePurchase']} \n'),
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.done_all_sharp,
+                                size: 18.0,
+                              )),
+                              TextSpan(
+                                  text: ' ${_books[index]['dateFinished']}'),
+                            ],
+                          ),
+                        ),
+                  trailing: SizedBox(
+                    width: 100,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () async {
+                            var result = await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => AddBookScreen(
+                                        id: _books[index]['id'],
+                                        book: _books[index])));
+
+                            if (result != null && result) {
+                              setState(() {
+                                _refreshBooks();
+                              });
+                            }
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteItem(
+                              _books[index]['id'], _books[index]['title']),
+                        ),
+                      ],
+                    ),
+                  ),
+                  onTap: () {
+                    logger.i('tapped: ${_books[index]['title']}');
+                    _showBookDetails(context, _books[index]['id']);
+                  },
                 ),
-                onTap: () {
-                  logger.i('tapped: ${_books[index]['title']}');
-                  _showBookDetails(context, _books[index]['id']);
-                },
               ),
             ),
-          ),
-        // ),
+      // ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
             const DrawerHeader(
-              decoration: BoxDecoration(color: Color.fromRGBO(141, 166, 131, 1.0),),
+              decoration: BoxDecoration(
+                color: Color.fromRGBO(141, 166, 131, 1.0),
+              ),
               child: Text(
                 'tsundoku\n積ん読',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w500
-                ),
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w500),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.fiber_new_rounded, color: Colors.red,),
+              leading: const Icon(
+                Icons.fiber_new_rounded,
+                color: Colors.red,
+              ),
               title: Text('$_countBooksNew new books!'),
             ),
             ListTile(
-              leading: const Icon(Icons.menu_book_sharp, color: Colors.amber,),
+              leading: const Icon(
+                Icons.menu_book_sharp,
+                color: Colors.amber,
+              ),
               title: Text('$_countBooksReading currently reading.'),
             ),
             ListTile(
-              leading: const Icon(Icons.done_all_sharp, color: Colors.green,),
+              leading: const Icon(
+                Icons.done_all_sharp,
+                color: Colors.green,
+              ),
               title: Text('$_countBooksFinished already finished!'),
             ),
             Padding(
@@ -328,7 +385,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   List<List<String>> booksList = [];
 
                   // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished],[isbn],[publisher]
-                  List<String> identificationHeader = ['0','tsundoku','aolabs','0','','','',''];
+                  List<String> identificationHeader = [
+                    '0',
+                    'tsundoku',
+                    'aolabs',
+                    '0',
+                    '',
+                    '',
+                    '',
+                    ''
+                  ];
                   booksList.add(identificationHeader);
 
                   final sortedBooksList = await SQLHelper.getBooks();
@@ -349,21 +415,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     ];
                     // handling for new field added in db (with null value)
                     String nullProtection = '';
-                    (sortedBooksList[i]['isbn'] != null) ? oneBookData.add(sortedBooksList[i]['isbn']) : oneBookData.add(nullProtection);
-                    (sortedBooksList[i]['publisher'] != null) ? oneBookData.add(sortedBooksList[i]['publisher']) : oneBookData.add(nullProtection);
+                    (sortedBooksList[i]['isbn'] != null)
+                        ? oneBookData.add(sortedBooksList[i]['isbn'])
+                        : oneBookData.add(nullProtection);
+                    (sortedBooksList[i]['publisher'] != null)
+                        ? oneBookData.add(sortedBooksList[i]['publisher'])
+                        : oneBookData.add(nullProtection);
 
                     booksList.add(oneBookData);
                   }
                   logger.i('booksList = $booksList');
 
-                  String csvData = const ListToCsvConverter().convert(booksList);
+                  String csvData =
+                      const ListToCsvConverter().convert(booksList);
                   logger.i('csvData = $csvData');
 
                   // check whether permission is given for this app or not.
-                  var permissionStatus = await Permission.manageExternalStorage.status;
+                  var permissionStatus =
+                      await Permission.manageExternalStorage.status;
                   if (!permissionStatus.isGranted) {
                     // ask for permission if not granted
-                    var newPermission = await Permission.manageExternalStorage.request();
+                    var newPermission =
+                        await Permission.manageExternalStorage.request();
 
                     if (!newPermission.isGranted) {
                       logger.w('permission not granted.');
@@ -372,7 +445,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Unable to export to CSV - storage access permission is not granted.'),
+                            content: Text(
+                                'Unable to export to CSV - storage access permission is not granted.'),
                             duration: Duration(seconds: 4),
                             showCloseIcon: true,
                             closeIconColor: Colors.deepOrange,
@@ -380,15 +454,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       }
-                    } 
-                    else {
+                    } else {
                       logger.d('permission now granted. please try again.');
 
                       // show snack bar informing user of permission status
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Storage access permission is now granted. Please try again to export to CSV.'),
+                            content: Text(
+                                'Storage access permission is now granted. Please try again to export to CSV.'),
                             duration: Duration(seconds: 4),
                             showCloseIcon: true,
                             closeIconColor: Colors.deepOrange,
@@ -397,19 +471,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       }
                     }
-                  }
-                  else {
+                  } else {
                     // get path to export csv to
                     // final String exportDir = (await getExternalStorageDirectory())!.path;
                     // final String exportPath = "$exportDir/csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
 
                     // init to download folder first
-                    Directory directory = Directory("/storage/emulated/0/Download");
+                    Directory directory =
+                        Directory("/storage/emulated/0/Download");
                     try {
                       if (Platform.isIOS) {
                         directory = await getApplicationDocumentsDirectory();
-                      }
-                      else {
+                      } else {
                         directory = Directory("/storage/emulated/0/Download");
 
                         // fallback if download folder didn't exist
@@ -417,17 +490,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           await getExternalStorageDirectory();
                         }
                       }
-                    }
-                    catch (err, stack) {
-                      logger.e('cannot get download folder path', error: err, stackTrace: stack);
+                    } catch (err, stack) {
+                      logger.e('cannot get download folder path',
+                          error: err, stackTrace: stack);
                     }
 
                     // const String downloadDir = "/storage/emulated/0/Download";
                     final String downloadDir = directory.path;
-                    final String filenameCsv = "tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
+                    final String filenameCsv =
+                        "tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
                     final String exportPath = "$downloadDir/$filenameCsv";
                     logger.i('exportPath = $exportPath');
-                    
+
                     // write the csv file
                     final File file = File(exportPath);
                     await file.writeAsString(csvData);
@@ -436,13 +510,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('All books data is exported at Download/$filenameCsv .'),
+                          content: Text(
+                              'All books data is exported at Download/$filenameCsv .'),
                           duration: const Duration(seconds: 4),
                           showCloseIcon: true,
                           closeIconColor: Colors.deepOrange,
                           behavior: SnackBarBehavior.floating,
                           // action: SnackBarAction(
-                          //   label: 'OK', 
+                          //   label: 'OK',
                           //   onPressed: () {
                           //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           //   },
@@ -460,7 +535,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Text('Import from CSV'),
                 onPressed: () async {
                   // open file picker
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  FilePickerResult? result =
+                      await FilePicker.platform.pickFiles(
                     allowedExtensions: ['csv'],
                     type: FileType.custom,
                   );
@@ -468,8 +544,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (result == null) {
                     // user cancel selecting file
                     logger.d('file picking cancelled');
-                  }
-                  else {
+                  } else {
                     String? path = result.files.first.path;
                     logger.i('selected file path = $path');
 
@@ -477,80 +552,98 @@ class _HomeScreenState extends State<HomeScreen> {
                     final csvFile = File(path!).openRead();
 
                     // convert csv to list
-                    List<List> listFromCsv = await csvFile.transform(utf8.decoder).transform(const CsvToListConverter()).toList();
+                    List<List> listFromCsv = await csvFile
+                        .transform(utf8.decoder)
+                        .transform(const CsvToListConverter())
+                        .toList();
 
                     // safety check on the imported list
                     List safetyRowFromCsv = listFromCsv.first;
-                    List defaultIdHeader = [0,'tsundoku','aolabs',0,'','','',''];
-                    bool checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
-                    logger.i('list from csv = $listFromCsv, defaultIdHeader = $defaultIdHeader, checkPass = $checkPass');
+                    List defaultIdHeader = [
+                      0,
+                      'tsundoku',
+                      'aolabs',
+                      0,
+                      '',
+                      '',
+                      '',
+                      ''
+                    ];
+                    bool checkPass =
+                        listEquals(safetyRowFromCsv, defaultIdHeader);
+                    logger.i(
+                        'list from csv = $listFromCsv, defaultIdHeader = $defaultIdHeader, checkPass = $checkPass');
 
                     if (checkPass == false && mounted) {
                       // show snack bar for confirmation
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Import cancelled. Incompatible CSV file selected.'),
+                          content: Text(
+                              'Import cancelled. Incompatible CSV file selected.'),
                           duration: Duration(seconds: 4),
                           showCloseIcon: true,
                           closeIconColor: Colors.deepOrange,
                           behavior: SnackBarBehavior.floating,
                           // action: SnackBarAction(
-                          //   label: 'OK', 
+                          //   label: 'OK',
                           //   onPressed: () {
                           //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           //   },
                           // ),
                         ),
                       );
-                    }
-                    else {
+                    } else {
                       // remove safety row first (no need to omport that)
                       listFromCsv.removeAt(0);
 
                       // if _books not null (got existing records) show alert dialog to add or overwrite
                       var overwriteConfirm = 'Cancel';
                       if (_books.isNotEmpty) {
-                        overwriteConfirm = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => alertForOverwrite(),));
-                      }
-                      else {
+                        overwriteConfirm =
+                            await Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => alertForOverwrite(),
+                        ));
+                      } else {
                         // _books list is empty, then just proceed to write data from csv
                         overwriteConfirm = 'OK';
                       }
                       logger.d('overwrite confirm = $overwriteConfirm');
 
                       // add csv books into db
-                      if ('Cancel'.compareTo(overwriteConfirm) == 0 && mounted) {
+                      if ('Cancel'.compareTo(overwriteConfirm) == 0 &&
+                          mounted) {
                         // show snack bar for confirmation
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Import cancelled. Books data won\'t be overwrite.'),
+                            content: Text(
+                                'Import cancelled. Books data won\'t be overwrite.'),
                             duration: Duration(seconds: 4),
                             showCloseIcon: true,
                             closeIconColor: Colors.deepOrange,
                             behavior: SnackBarBehavior.floating,
                             // action: SnackBarAction(
-                            //   label: 'OK', 
+                            //   label: 'OK',
                             //   onPressed: () {
                             //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             //   },
                             // ),
                           ),
                         );
-                      }
-                      else {
+                      } else {
                         // do db works
                         _deleteAllAndAddBooks(listFromCsv);
                         // show snack bar for confirmation
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Import completed. Books data has been updated.'),
+                              content: Text(
+                                  'Import completed. Books data has been updated.'),
                               duration: Duration(seconds: 4),
                               showCloseIcon: true,
                               closeIconColor: Colors.deepOrange,
                               behavior: SnackBarBehavior.floating,
                               // action: SnackBarAction(
-                              //   label: 'OK', 
+                              //   label: 'OK',
                               //   onPressed: () {
                               //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                               //   },
@@ -564,13 +657,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
+            const ListTile(
+              leading: Icon(
+                Icons.code_sharp,
+                color: Colors.grey,
+              ),
+              title: Text(
+                'tsundoku v0.7.0',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () async {
-          var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
+          var result = await Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => const AddBookScreen(id: -1, book: null)));
 
           // to rebuild the screen if navigator pop returns true
           if (result != null && result) {
