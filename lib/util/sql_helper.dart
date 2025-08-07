@@ -343,6 +343,6 @@ class SQLHelper {
       String title) async {
     final db = await SQLHelper.db();
     return db.rawQuery(
-        "SELECT * FROM books WHERE title LIKE '%$title%' ORDER BY status, datePurchase, id");
+        "SELECT * FROM books WHERE title LIKE '%$title%' ORDER BY title DESC");
   }
 }
