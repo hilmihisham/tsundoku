@@ -26,6 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // logger
   final logger = Logger();
 
+  // version number on drawer
+  final String appVerNum = 'tsundoku v0.7.0';
+
   // to control showing floating action button
   // bool _showFab = true;
 
@@ -668,14 +671,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-            const ListTile(
-              leading: Icon(
+            ListTile(
+              leading: const Icon(
                 Icons.code_sharp,
                 color: Colors.grey,
               ),
               title: Text(
-                'tsundoku v0.7.0',
-                style: TextStyle(color: Colors.grey),
+                appVerNum,
+                style: const TextStyle(color: Colors.grey),
               ),
             ),
           ],
