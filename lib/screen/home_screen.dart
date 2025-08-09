@@ -384,12 +384,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   logger.d('export to csv clicked');
                   List<List<String>> booksList = [];
 
-                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished],[isbn],[publisher]
+                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished],[isbn],[publisher],[series],[volumeNum]
                   List<String> identificationHeader = [
                     '0',
                     'tsundoku',
                     'aolabs',
                     '0',
+                    '',
+                    '',
                     '',
                     '',
                     '',
@@ -420,6 +422,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         : oneBookData.add(nullProtection);
                     (sortedBooksList[i]['publisher'] != null)
                         ? oneBookData.add(sortedBooksList[i]['publisher'])
+                        : oneBookData.add(nullProtection);
+                    (sortedBooksList[i]['series'] != null)
+                        ? oneBookData.add(sortedBooksList[i]['series'])
+                        : oneBookData.add(nullProtection);
+                    (sortedBooksList[i]['volumeNum'] != null)
+                        ? oneBookData
+                            .add(sortedBooksList[i]['volumeNum'].toString())
                         : oneBookData.add(nullProtection);
 
                     booksList.add(oneBookData);
@@ -564,6 +573,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       'tsundoku',
                       'aolabs',
                       0,
+                      '',
+                      '',
                       '',
                       '',
                       '',

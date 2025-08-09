@@ -277,6 +277,10 @@ class _AddBookScreen extends State<AddBookScreen> {
           : _dateReadDoneController.text = existingBook['dateFinished'];
       if (existingBook['publisher'] != null)
         _publisherController.text = existingBook['publisher'];
+      if (existingBook['series'] != null)
+        _bookSeriesController.text = existingBook['series'];
+      if (existingBook['volumeNum'] != null)
+        _bookVolumeController.text = existingBook['volumeNum'].toString();
 
       _isForgotDateDone = false;
 
@@ -811,7 +815,9 @@ class _AddBookScreen extends State<AddBookScreen> {
         _datePurchaseController.text,
         _dateReadDoneController.text,
         _isbn13Controller.text,
-        _publisherController.text);
+        _publisherController.text,
+        _bookSeriesController.text,
+        int.parse(_bookVolumeController.text));
   }
 
   /// update existing book
@@ -824,6 +830,8 @@ class _AddBookScreen extends State<AddBookScreen> {
         _datePurchaseController.text,
         _dateReadDoneController.text,
         _isbn13Controller.text,
-        _publisherController.text);
+        _publisherController.text,
+        _bookSeriesController.text,
+        int.parse(_bookVolumeController.text));
   }
 }

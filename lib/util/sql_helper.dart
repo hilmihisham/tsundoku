@@ -12,7 +12,9 @@ class SQLHelper {
       dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       dateFinished TEXT,
       isbn TEXT,
-      publisher TEXT
+      publisher TEXT,
+      series TEXT,
+      volumeNum INTEGER
     )
     """);
   }
@@ -56,6 +58,11 @@ class SQLHelper {
   //   """);
   // }
 
+  static Future<void> updateTablesV1toV2(sql.Database database) async {
+    await database.execute('ALTER TABLE books ADD series TEXT');
+    await database.execute('ALTER TABLE books ADD volumeNum INTEGER');
+  }
+
   // static Future<void> updateTablesV1toV2(sql.Database database) async {
   //   await database.execute('ALTER TABLE books ADD dateFinished TEXT');
   // }
@@ -72,22 +79,24 @@ class SQLHelper {
   // dateFinished: yyyy-MM-dd
   // isbn: ISBN-13 number
   // publisher: book publisher (can get from google books api as well)
+  // series: book series name
+  // volumeNum: volume or issue number of the book
 
   static Future<sql.Database> db() async {
     return sql.openDatabase(
       'tsundoku.db',
-      version: 1,
+      version: 2, // specify what version of db to open
       onCreate: (sql.Database database, int version) async {
         await createTables(database);
       },
-      // onUpgrade: (sql.Database database, oldVersion, newVersion) async {
-      //   if (oldVersion == 1) {
-      //     await updateTablesV1toV2(database);
-      //   }
-      //   if (oldVersion == 2) {
-      //     await updateTablesV2toV3(database);
-      //   }
-      // },
+      onUpgrade: (sql.Database database, oldVersion, newVersion) async {
+        if (oldVersion == 1) {
+          await updateTablesV1toV2(database);
+        }
+        // if (oldVersion == 2) {
+        //   await updateTablesV2toV3(database);
+        // }
+      },
     );
   }
 
@@ -99,7 +108,9 @@ class SQLHelper {
       String? datePurchase,
       String? dateFinished,
       String? isbn,
-      String? publisher) async {
+      String? publisher,
+      String? series,
+      int? volumeNum) async {
     final db = await SQLHelper.db();
 
     final data = {
@@ -111,6 +122,8 @@ class SQLHelper {
       'dateFinished': dateFinished,
       'isbn': isbn,
       'publisher': publisher,
+      'series': series,
+      'volumeNum': volumeNum,
     };
 
     final id = await db.insert('books', data,
@@ -166,13 +179,17 @@ class SQLHelper {
       buffer.write(book.elementAt(6)); // isbn
       buffer.write("', '");
       buffer.write(book.elementAt(7)); // publisher
+      buffer.write("', '");
+      buffer.write(book.elementAt(8)); // series
+      buffer.write("', '");
+      buffer.write(book.elementAt(9)); // volumeNum
       buffer.write("')");
     }
     logger.d(
-        'INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}');
+        'INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher, series, volumeNum) VALUES ${buffer.toString()}');
 
     var raw = await db.rawInsert(
-        "INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher) VALUES ${buffer.toString()}");
+        "INSERT INTO books (id, title, author, status, datePurchase, dateFinished, isbn, publisher, series, volumeNum) VALUES ${buffer.toString()}");
     return raw;
   }
 
@@ -228,7 +245,9 @@ class SQLHelper {
       String? datePurchase,
       String? dateFinished,
       String? isbn,
-      String? publisher) async {
+      String? publisher,
+      String? series,
+      int? volumeNum) async {
     final db = await SQLHelper.db();
 
     final data = {
@@ -239,6 +258,8 @@ class SQLHelper {
       'dateFinished': dateFinished,
       'isbn': isbn,
       'publisher': publisher,
+      'series': series,
+      'volumeNum': volumeNum,
     };
 
     final result =
