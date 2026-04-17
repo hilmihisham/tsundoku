@@ -426,8 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   logger.i('booksList = $booksList');
 
-                  String csvData =
-                      const ListToCsvConverter().convert(booksList);
+                  String csvData = const CsvEncoder().convert(booksList);
                   logger.i('csvData = $csvData');
 
                   // check whether permission is given for this app or not.
@@ -536,7 +535,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () async {
                   // open file picker
                   FilePickerResult? result =
-                      await FilePicker.platform.pickFiles(
+                      await FilePicker.pickFiles(
                     allowedExtensions: ['csv'],
                     type: FileType.custom,
                   );
@@ -554,7 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     // convert csv to list
                     List<List> listFromCsv = await csvFile
                         .transform(utf8.decoder)
-                        .transform(const CsvToListConverter())
+                        .transform(const CsvDecoder())
                         .toList();
 
                     // safety check on the imported list
