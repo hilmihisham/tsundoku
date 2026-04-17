@@ -74,7 +74,10 @@ Version | Date | Summary
 0.7.0 |  6/8/2025 | create search function to search for records according to book title. 
 
 ## ..other notes
-Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
-
+- 31/7/2021 @ old and now-archived repo - Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
 - 31/7/2021 - first Malaysia medal in Olympics Tokyo 2020 achieved. Thank you Aaron Chia/Soh Wooi Yik for the bronze! More to come, definitely.
 - 4/8/2023 - China 1-5 Malaysia hockey.
+- 18/4/2026 - My current work implemented some kind of branching strategy for our code repo (that doesn't mean that my provious workplaces don't have this;  with time and experience, only now did I able to see and understand this thing clearly), so I'm thinking it's time to do things more proper for this Tsundoku repo as well - even though it's only me alone working on it, but that's beside the point. So starting today, I'm introducing ***project board***, and a simple ***GitHub flow*** branching strategy for this repo.
+  - GitHub flow reference: [The Ultimate Guide to Git Branching Strategies](https://blog.prateekjain.dev/the-ultimate-guide-to-git-branching-strategies-6324f1aceac2) 
+  <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*6HtL5CWvMkjCPKH5_oMLIw.png" style="width:60%; height:auto;">
+
