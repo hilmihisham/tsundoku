@@ -662,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.grey,
               ),
               title: Text(
-                'tsundoku v0.7.0',
+                'tsundoku v0.7.1',
                 style: TextStyle(color: Colors.grey),
               ),
             ),
