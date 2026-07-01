@@ -5,6 +5,7 @@ import 'package:books_finder/books_finder.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 import 'barcode_scanner_view.dart';
@@ -323,13 +324,25 @@ class _AddBookScreen extends State<AddBookScreen> {
                     }
                     else {
                       try {
-                        final List<Book> bookSearch = await queryBooks(
-                          _isbn13Controller.text,
-                          queryType: QueryType.isbn,
-                          maxResults: 1,
-                          printType: PrintType.books,
-                          orderBy: OrderBy.relevance,
-                        );
+                        final prefs = await SharedPreferences.getInstance();
+                        final savedApiKey = prefs.getString('google_books_api_key')?.trim() ?? '';
+
+                        final List<Book> bookSearch = savedApiKey.isEmpty
+                            ? await queryBooks(
+                                _isbn13Controller.text,
+                                queryType: QueryType.isbn,
+                                maxResults: 1,
+                                printType: PrintType.books,
+                                orderBy: OrderBy.relevance,
+                              )
+                            : await queryBooks(
+                                _isbn13Controller.text,
+                                queryType: QueryType.isbn,
+                                maxResults: 1,
+                                printType: PrintType.books,
+                                orderBy: OrderBy.relevance,
+                                apiKey: savedApiKey,
+                              );
                         // for (Book bookResult in bookSearch) {
                         //   logger.d(
                         //     'title: ${bookResult.info.title}, subtitle: ${bookResult.info.subtitle}, author: ${bookResult.info.authors}\n' 
