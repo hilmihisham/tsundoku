@@ -72,6 +72,8 @@ Version | Date | Summary
 0.6.5 | 29/8/2023 | more simple stats (frequently updated stats for more fun looking at different things), stats reordering
 0.6.6 | 29/8/2023 | for import from csv, need to clean up the strings from ' and " mark, or it'll be error on sql insert (currently sanitize for title field only). 
 0.7.0 |  6/8/2025 | create search function to search for records according to book title. 
+0.7.1 |  1/7/2026 | updating dependencies etc...
+0.7.2 |  1/7/2026 | settings screen is here! use your own Google Books API key to search book information using ISBN number 
 
 ## ..other notes
 - 31/7/2021 @ old and now-archived repo - Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
@@ -80,4 +82,4 @@ Version | Date | Summary
 - 18/4/2026 - My current work implemented some kind of branching strategy for our code repo (that doesn't mean that my provious workplaces don't have this;  with time and experience, only now did I able to see and understand this thing clearly), so I'm thinking it's time to do things more proper for this Tsundoku repo as well - even though it's only me alone working on it, but that's beside the point. So starting today, I'm introducing ***project board***, and a simple ***GitHub flow*** branching strategy for this repo.
   - GitHub flow reference: [The Ultimate Guide to Git Branching Strategies](https://blog.prateekjain.dev/the-ultimate-guide-to-git-branching-strategies-6324f1aceac2) 
   <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*6HtL5CWvMkjCPKH5_oMLIw.png" style="width:60%; height:auto;">
-
+- 1/7/2026 - gotta admit, i need some help with this codebase (it's a learning experience, it's a bit spaghetti), so i employed the help of GitHub Copilot (still on free version tho, as i'm still testing the water on this) to help me cleaning up a bit and adding some new features.
