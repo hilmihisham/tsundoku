@@ -559,10 +559,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     // safety check on the imported list
                     List safetyRowFromCsv = listFromCsv.first;
                     List defaultIdHeader = [
-                      0,
+                      '0',
                       'tsundoku',
                       'aolabs',
-                      0,
+                      '0',
                       '',
                       '',
                       '',
@@ -592,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     } else {
-                      // remove safety row first (no need to omport that)
+                      // remove safety row first (no need to import that)
                       listFromCsv.removeAt(0);
 
                       // if _books not null (got existing records) show alert dialog to add or overwrite
