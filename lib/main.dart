@@ -20,7 +20,7 @@ class MainApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color.fromRGBO(150, 206, 180, 1.0),
-        bottomAppBarTheme: const BottomAppBarTheme(color: Color.fromRGBO(135, 185, 162, 1.0))
+        bottomAppBarTheme: const BottomAppBarThemeData(color: Color.fromRGBO(135, 185, 162, 1.0))
       ),
       home: const BaseScreen(),
     );
