@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:books_finder/books_finder.dart';
 import 'package:flutter/material.dart';
@@ -321,86 +322,124 @@ class _AddBookScreen extends State<AddBookScreen> {
                       );
                     }
                     else {
-                      final List<Book> bookSearch = await queryBooks(
-                        _isbn13Controller.text,
-                        queryType: QueryType.isbn,
-                        maxResults: 1,
-                        printType: PrintType.books,
-                        orderBy: OrderBy.relevance,
-                      );
-                      // for (Book bookResult in bookSearch) {
-                      //   logger.d(
-                      //     'title: ${bookResult.info.title}, subtitle: ${bookResult.info.subtitle}, author: ${bookResult.info.authors}\n' 
-                      //     'publisher: ${bookResult.info.publisher}, description: ${bookResult.info.description}'
-                      //   );
-                      // }
+                      try {
+                        final List<Book> bookSearch = await queryBooks(
+                          _isbn13Controller.text,
+                          queryType: QueryType.isbn,
+                          maxResults: 1,
+                          printType: PrintType.books,
+                          orderBy: OrderBy.relevance,
+                        );
+                        // for (Book bookResult in bookSearch) {
+                        //   logger.d(
+                        //     'title: ${bookResult.info.title}, subtitle: ${bookResult.info.subtitle}, author: ${bookResult.info.authors}\n' 
+                        //     'publisher: ${bookResult.info.publisher}, description: ${bookResult.info.description}'
+                        //   );
+                        // }
 
-                      // popup to confirm search result is correct
-                      if (bookSearch.isEmpty) {
-                        // no search result found, show snack bar to notify
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('No books found with that ISBN number.'),
-                              duration: Duration(seconds: 4),
-                              showCloseIcon: true,
-                              closeIconColor: Colors.deepOrange,
-                              behavior: SnackBarBehavior.floating,
-                              // action: SnackBarAction(
-                              //   label: 'OK', 
-                              //   onPressed: () {
-                              //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                              //   },
-                              // ),
-                            ),
-                          );
-                        }
-                        
-                      }
-                      else {
-                        var searchResultConfirm = 'No';
-                        
-                        Book bookResult = bookSearch.first;
-
-                        String fullTitle = bookResult.info.title;
-                        if(bookResult.info.subtitle.isNotEmpty) fullTitle = '$fullTitle: ${bookResult.info.subtitle}';
-                        
-                        String allAuthors = bookResult.info.authors.toString().substring(1, bookResult.info.authors.toString().length-1);
-
-                        // search found a result, confirm result is correct
-                        if (mounted) {
-                          searchResultConfirm = await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => alertForSearchConfirm(fullTitle, allAuthors, bookResult.info.publisher),
-                            )
-                          );
-                        }
-
-                        if (searchResultConfirm.compareTo('No') == 0 && mounted) {
-                          // search result is wrong
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Too bad, search result is not the book that we looking for.'),
-                              duration: Duration(seconds: 4),
-                              showCloseIcon: true,
-                              closeIconColor: Colors.deepOrange,
-                              behavior: SnackBarBehavior.floating,
-                              // action: SnackBarAction(
-                              //   label: 'OK', 
-                              //   onPressed: () {
-                              //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                              //   },
-                              // ),
-                            ),
-                          );
+                        // popup to confirm search result is correct
+                        if (bookSearch.isEmpty) {
+                          // no search result found, show snack bar to notify
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No books found with that ISBN number.'),
+                                duration: Duration(seconds: 4),
+                                showCloseIcon: true,
+                                closeIconColor: Colors.deepOrange,
+                                behavior: SnackBarBehavior.floating,
+                                // action: SnackBarAction(
+                                //   label: 'OK', 
+                                //   onPressed: () {
+                                //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                //   },
+                                // ),
+                              ),
+                            );
+                          }
+                          
                         }
                         else {
-                          setState(() {
-                            _titleController.text = fullTitle;
-                            _authorController.text = allAuthors;
-                            _publisherController.text = bookResult.info.publisher;
-                          });
+                          var searchResultConfirm = 'No';
+                          
+                          Book bookResult = bookSearch.first;
+
+                          String fullTitle = bookResult.info.title;
+                          if(bookResult.info.subtitle.isNotEmpty) fullTitle = '$fullTitle: ${bookResult.info.subtitle}';
+                          
+                          String allAuthors = bookResult.info.authors.toString().substring(1, bookResult.info.authors.toString().length-1);
+
+                          // search found a result, confirm result is correct
+                          if (mounted) {
+                            searchResultConfirm = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => alertForSearchConfirm(fullTitle, allAuthors, bookResult.info.publisher),
+                              )
+                            );
+                          }
+
+                          if (searchResultConfirm.compareTo('No') == 0 && mounted) {
+                            // search result is wrong
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Too bad, search result is not the book that we looking for.'),
+                                duration: Duration(seconds: 4),
+                                showCloseIcon: true,
+                                closeIconColor: Colors.deepOrange,
+                                behavior: SnackBarBehavior.floating,
+                                // action: SnackBarAction(
+                                //   label: 'OK', 
+                                //   onPressed: () {
+                                //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                //   },
+                                // ),
+                              ),
+                            );
+                          }
+                          else {
+                            setState(() {
+                              _titleController.text = fullTitle;
+                              _authorController.text = allAuthors;
+                              _publisherController.text = bookResult.info.publisher;
+                            });
+                          }
                         }
+                      } catch (e, stack) {
+                        logger.e('Error searching book by ISBN', time: DateTime.now(), error: e, stackTrace: stack);
+
+                        String errorMessageText;
+                        String errorText = e.toString();
+                        final bool isHostLookupError = errorText.contains('Failed host lookup');
+
+                        if (isHostLookupError) {
+                          errorMessageText = 'Error searching book by ISBN. Please check your internet connection.';
+                        }
+                        else {
+                          // try to parse the error message from server response
+                          String? serverMessage;
+
+                          try {
+                            final Map<String, dynamic> parsedError = jsonDecode(errorText) as Map<String, dynamic>;
+                            serverMessage = parsedError['error']?['message']?.toString();
+                          } catch (_) {
+                            serverMessage = null;
+                          }
+
+                          
+                          errorMessageText = (serverMessage != null && serverMessage.isNotEmpty)
+                              ? 'Error searching book by ISBN.\n\n$serverMessage'
+                              : 'Error searching book by ISBN.';
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(errorMessageText),
+                            duration: const Duration(seconds: 6),
+                            showCloseIcon: true,
+                            closeIconColor: Colors.deepOrange,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       }
                     }
                   },
