@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:books_finder/books_finder.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:tsundoku/util/sql_helper.dart';
+
+import 'barcode_scanner_view.dart';
 
 class AddBookScreen extends StatefulWidget {
   /// [id] value is required. If creating a new book entry, pass in the value as -1.
@@ -195,24 +195,25 @@ class _AddBookScreen extends State<AddBookScreen> {
 
   /// call barcode scanner
   Future<void> barcodeScan() async {
-    String barcodeScanResult = '-1';
+    String? barcodeScanResult;
 
     try {
-      barcodeScanResult = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.BARCODE);
+      barcodeScanResult = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (context) => BarcodeScannerView(
+            onScan: (value) => Navigator.of(context).pop(value),
+          ),
+        ),
+      );
       logger.i('Scanned barcode = $barcodeScanResult');
-    } 
-    on PlatformException {
-      // Platform messages may fail, so we use a try/catch PlatformException.
-      logger.e('Barcode scanner error on PlatformExeption');
-    }
-    catch (e, stack) {
+    } catch (e, stack) {
       logger.e('Barcode scanner error', time: DateTime.now(), error: e, stackTrace: stack);
     }
 
-    if (!mounted) return;
+    if (!mounted || barcodeScanResult == null || barcodeScanResult.isEmpty) return;
 
     setState(() {
-      if (barcodeScanResult.compareTo('-1') != 0) _isbn13Controller.text = barcodeScanResult;
+      _isbn13Controller.text = barcodeScanResult!;
     });
   }
 

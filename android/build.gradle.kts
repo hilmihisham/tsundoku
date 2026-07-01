@@ -15,7 +15,18 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
 subprojects {
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.library")) {
+            extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.let { libraryExtension ->
+                if (libraryExtension.namespace.isNullOrBlank()) {
+                    libraryExtension.namespace = "com.amolg.flutterbarcodescanner"
+                }
+            }
+        }
+    }
+
     project.evaluationDependsOn(":app")
 }
 
