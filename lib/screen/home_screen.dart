@@ -11,10 +11,11 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
+import 'package:tsundoku/screen/settings_screen.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -44,34 +45,365 @@ class _HomeScreenState extends State<HomeScreen> {
   int _countBooksFinished = 0;
 
   // fetch all data from db
-  void _refreshBooks() async {
-    //final data = await SQLHelper.getBooks();
-
+  Future<void> _refreshBooks() async {
     final dataNewAndReading = await SQLHelper.getBooksNewAndReading();
     final dataFinished = await SQLHelper.getBooksInFinishedOrder();
 
-    // final dataBooksNew = await SQLHelper.getBooksByStatus("0");
-    // final dataBooksReading = await SQLHelper.getBooksByStatus("1");
-    // final dataBooksFinished = await SQLHelper.getBooksByStatus("2");
-
     final countNewBooks = await SQLHelper.getCountByStatus("0");
-    _countBooksNew = countNewBooks!;
-
     final countReadingBooks = await SQLHelper.getCountByStatus("1");
-    _countBooksReading = countReadingBooks!;
-
     final countFinishedBooks = await SQLHelper.getCountByStatus("2");
-    _countBooksFinished = countFinishedBooks!;
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _books = dataNewAndReading + dataFinished;
+      _countBooksNew = countNewBooks!;
+      _countBooksReading = countReadingBooks!;
+      _countBooksFinished = countFinishedBooks!;
+      _isLoading = false;
+    });
 
     logger.i(
         "new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
+  }
 
-    setState(() {
-      //_books = data;
-      _books = dataNewAndReading + dataFinished;
-      // _books = dataBooksNew + dataBooksReading + dataBooksFinished;
-      _isLoading = false;
-    });
+  Future<void> _handleAddBook() async {
+    if (!mounted) return;
+
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AddBookScreen(id: -1, book: null),
+      ),
+    );
+
+    if (result != null && result) {
+      _refreshBooks();
+    }
+  }
+
+  Future<void> _handleEditBook(Map<String, dynamic> book) async {
+    if (!mounted) return;
+
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddBookScreen(id: book['id'], book: book),
+      ),
+    );
+
+    if (result != null && result) {
+      _refreshBooks();
+    }
+  }
+
+  Future<void> _handleExportCsv() async {
+    logger.d('export to csv clicked');
+    final booksList = <List<String>>[];
+
+    final identificationHeader = [
+      '0',
+      'tsundoku',
+      'aolabs',
+      '0',
+      '',
+      '',
+      '',
+      ''
+    ];
+    booksList.add(identificationHeader);
+
+    final sortedBooksList = await SQLHelper.getBooks();
+
+    for (var i = 0; i < sortedBooksList.length; i++) {
+      final oneBookData = <String>[
+        sortedBooksList[i]['id'].toString(),
+        '${sortedBooksList[i]['title']}',
+        '${sortedBooksList[i]['author']}',
+        '${sortedBooksList[i]['status']}',
+        '${sortedBooksList[i]['datePurchase']}',
+        '${sortedBooksList[i]['dateFinished']}',
+      ];
+
+      oneBookData.add(
+          sortedBooksList[i]['isbn']?.toString() ?? '');
+      oneBookData.add(
+          sortedBooksList[i]['publisher']?.toString() ?? '');
+
+      booksList.add(oneBookData);
+    }
+    logger.i('booksList = $booksList');
+
+    final csvData = const CsvEncoder().convert(booksList);
+    logger.i('csvData = $csvData');
+
+    final permissionStatus = await Permission.manageExternalStorage.status;
+    if (!permissionStatus.isGranted) {
+      final newPermission = await Permission.manageExternalStorage.request();
+
+      if (!newPermission.isGranted) {
+        logger.w('permission not granted.');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Unable to export to CSV - storage access permission is not granted.'),
+              duration: Duration(seconds: 4),
+              showCloseIcon: true,
+              closeIconColor: Colors.deepOrange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } else {
+        logger.d('permission now granted. please try again.');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Storage access permission is now granted. Please try again to export to CSV.'),
+              duration: Duration(seconds: 4),
+              showCloseIcon: true,
+              closeIconColor: Colors.deepOrange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    Directory directory = Directory('/storage/emulated/0/Download');
+    try {
+      if (Platform.isIOS) {
+        directory = await getApplicationDocumentsDirectory();
+      } else {
+        directory = Directory('/storage/emulated/0/Download');
+
+        if (!await directory.exists()) {
+          await getExternalStorageDirectory();
+        }
+      }
+    } catch (err, stack) {
+      logger.e('cannot get download folder path', error: err, stackTrace: stack);
+    }
+
+    final downloadDir = directory.path;
+    final filenameCsv =
+        'tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv';
+    final exportPath = '$downloadDir/$filenameCsv';
+    logger.i('exportPath = $exportPath');
+
+    final file = File(exportPath);
+    await file.writeAsString(csvData);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('All books data is exported at Download/$filenameCsv .'),
+          duration: const Duration(seconds: 4),
+          showCloseIcon: true,
+          closeIconColor: Colors.deepOrange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleImportCsv() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final result = await FilePicker.pickFiles(
+      allowedExtensions: ['csv'],
+      type: FileType.custom,
+    );
+
+    if (result == null) {
+      logger.d('file picking cancelled');
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    final path = result.files.first.path;
+    logger.i('selected file path = $path');
+
+    final csvFile = File(path!).openRead();
+
+    final listFromCsv = await csvFile
+        .transform(utf8.decoder)
+        .transform(const CsvDecoder())
+        .toList();
+
+    final safetyRowFromCsv = listFromCsv.first;
+    final defaultIdHeader = [
+      '0',
+      'tsundoku',
+      'aolabs',
+      '0',
+      '',
+      '',
+      '',
+      ''
+    ];
+    final checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
+    logger.i(
+        'list from csv = $listFromCsv, defaultIdHeader = $defaultIdHeader, checkPass = $checkPass');
+
+    if (checkPass == false) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Import cancelled. Incompatible CSV file selected.'),
+          duration: Duration(seconds: 4),
+          showCloseIcon: true,
+          closeIconColor: Colors.deepOrange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    listFromCsv.removeAt(0);
+
+    var overwriteConfirm = 'Cancel';
+    if (_books.isNotEmpty) {
+      if (!mounted) {
+        return;
+      }
+      overwriteConfirm = await navigator.push(MaterialPageRoute(
+        builder: (context) => alertForOverwrite(),
+      ));
+    } else {
+      overwriteConfirm = 'OK';
+    }
+    logger.d('overwrite confirm = $overwriteConfirm');
+
+    if ('Cancel'.compareTo(overwriteConfirm) == 0) {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Import cancelled. Books data won\'t be overwrite.'),
+          duration: Duration(seconds: 4),
+          showCloseIcon: true,
+          closeIconColor: Colors.deepOrange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    _deleteAllAndAddBooks(listFromCsv);
+
+    if (!mounted) {
+      return;
+    }
+
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Import completed. Books data has been updated.'),
+        duration: Duration(seconds: 4),
+        showCloseIcon: true,
+        closeIconColor: Colors.deepOrange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildBookList() {
+    return ListView.builder(
+      padding: const EdgeInsets.only(
+        bottom: kFloatingActionButtonMargin + 60,
+      ),
+      itemCount: _books.length,
+      itemBuilder: (context, index) {
+        final book = _books[index];
+        return _BookListItem(
+          book: book,
+          bookColor: bookListColor(book['status'].toString()),
+          onTap: () {
+            logger.i('tapped: ${book['title']}');
+            _showBookDetails(context, book['id']);
+          },
+          onEdit: () => _handleEditBook(book),
+          onDelete: () => _deleteItem(book['id'], book['title']),
+        );
+      },
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          const DrawerHeader(
+            decoration: BoxDecoration(
+              color: Color.fromRGBO(141, 166, 131, 1.0),
+            ),
+            child: Text(
+              'tsundoku\n積ん読',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.fiber_new_rounded,
+              color: Colors.red,
+            ),
+            title: Text('$_countBooksNew new books!'),
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.menu_book_sharp,
+              color: Colors.amber,
+            ),
+            title: Text('$_countBooksReading currently reading.'),
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.done_all_sharp,
+              color: Colors.green,
+            ),
+            title: Text('$_countBooksFinished already finished!'),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 5.0),
+            child: FilledButton.tonal(
+              onPressed: _handleExportCsv,
+              child: const Text('Export to CSV'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15.0, 0.0, 15.0, 15.0),
+            child: FilledButton.tonal(
+              onPressed: _handleImportCsv,
+              child: const Text('Import from CSV'),
+            ),
+          ),
+          const ListTile(
+            leading: Icon(
+              Icons.code_sharp,
+              color: Colors.grey,
+            ),
+            title: Text(
+              'tsundoku v0.7.1',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -210,501 +542,103 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          // : NotificationListener<UserScrollNotification>(
-          //     onNotification: (notification) {
-          //       final ScrollDirection direction = notification.direction;
-          //       setState(() {
-          //         if (direction == ScrollDirection.reverse) {
-          //           _showFab = false;
-          //         }
-          //         else if (direction == ScrollDirection.forward) {
-          //           _showFab = true;
-          //         }
-          //       });
-          //       return true;
-          //     },
-          : ListView.builder(
-              padding: const EdgeInsets.only(
-                  bottom: kFloatingActionButtonMargin +
-                      60), // to have empty space at the bottom so not to be covered by FAB button
-              itemCount: _books.length,
-              itemBuilder: (context, index) => Card(
-                color: bookListColor(_books[index]['status']),
-                margin: const EdgeInsets.all(8.0),
-                child: ListTile(
-                  // isThreeLine: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 8.0,
-                    horizontal: 15.0,
-                  ),
-                  title: Text(_books[index]['title']),
-                  titleTextStyle: const TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 19,
-                    color: Colors.black87,
-                  ),
-                  subtitle: ('2' != _books[index]['status'])
-                      ? Text.rich(
-                          TextSpan(
-                            children: [
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.account_circle_sharp,
-                                size: 18.0,
-                              )),
-                              TextSpan(text: ' ${_books[index]['author']}\n'),
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.storefront_sharp,
-                                size: 18.0,
-                              )),
-                              TextSpan(
-                                  text: ' ${_books[index]['publisher']}\n'),
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.shopping_cart_sharp,
-                                size: 18.0,
-                              )),
-                              TextSpan(
-                                  text: ' ${_books[index]['datePurchase']}'),
-                            ],
-                          ),
-                        )
-                      : Text.rich(
-                          TextSpan(
-                            children: [
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.account_circle_sharp,
-                                size: 18.0,
-                              )),
-                              TextSpan(text: ' ${_books[index]['author']}\n'),
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.storefront_sharp,
-                                size: 18.0,
-                              )),
-                              TextSpan(
-                                  text: ' ${_books[index]['publisher']}\n'),
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.shopping_cart_sharp,
-                                size: 18.0,
-                              )),
-                              TextSpan(
-                                  text: ' ${_books[index]['datePurchase']} \n'),
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.done_all_sharp,
-                                size: 18.0,
-                              )),
-                              TextSpan(
-                                  text: ' ${_books[index]['dateFinished']}'),
-                            ],
-                          ),
-                        ),
-                  trailing: SizedBox(
-                    width: 100,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () async {
-                            var result = await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (context) => AddBookScreen(
-                                        id: _books[index]['id'],
-                                        book: _books[index])));
+          : _buildBookList(),
+      drawer: _buildDrawer(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _handleAddBook,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
 
-                            if (result != null && result) {
-                              setState(() {
-                                _refreshBooks();
-                              });
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _deleteItem(
-                              _books[index]['id'], _books[index]['title']),
-                        ),
-                      ],
-                    ),
-                  ),
-                  onTap: () {
-                    logger.i('tapped: ${_books[index]['title']}');
-                    _showBookDetails(context, _books[index]['id']);
-                  },
+class _BookListItem extends StatelessWidget {
+  const _BookListItem({
+    required this.book,
+    required this.bookColor,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Map<String, dynamic> book;
+  final Color bookColor;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final isFinished = book['status'] == '2';
+    final purchaseText = ' ${book['datePurchase']}${isFinished ? ' \n' : ''}';
+
+    return Card(
+      color: bookColor,
+      margin: const EdgeInsets.all(8.0),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 8.0,
+          horizontal: 15.0,
+        ),
+        title: Text(book['title']),
+        titleTextStyle: const TextStyle(
+          fontWeight: FontWeight.w400,
+          fontSize: 19,
+          color: Colors.black87,
+        ),
+        subtitle: Text.rich(
+          TextSpan(
+            children: [
+              const WidgetSpan(
+                child: Icon(
+                  Icons.account_circle_sharp,
+                  size: 18.0,
                 ),
               ),
-            ),
-      // ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color.fromRGBO(141, 166, 131, 1.0),
+              TextSpan(text: ' ${book['author']}\n'),
+              const WidgetSpan(
+                child: Icon(
+                  Icons.storefront_sharp,
+                  size: 18.0,
+                ),
               ),
-              child: Text(
-                'tsundoku\n積ん読',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w500),
+              TextSpan(text: ' ${book['publisher']}\n'),
+              const WidgetSpan(
+                child: Icon(
+                  Icons.shopping_cart_sharp,
+                  size: 18.0,
+                ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.fiber_new_rounded,
-                color: Colors.red,
-              ),
-              title: Text('$_countBooksNew new books!'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.menu_book_sharp,
-                color: Colors.amber,
-              ),
-              title: Text('$_countBooksReading currently reading.'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.done_all_sharp,
-                color: Colors.green,
-              ),
-              title: Text('$_countBooksFinished already finished!'),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 5.0),
-              child: FilledButton.tonal(
-                child: const Text('Export to CSV'),
-                onPressed: () async {
-                  logger.d('export to csv clicked');
-                  List<List<String>> booksList = [];
-
-                  // add identification header to csv text [id],[title],[author],[status],[datePurchase],[dateFinished],[isbn],[publisher]
-                  List<String> identificationHeader = [
-                    '0',
-                    'tsundoku',
-                    'aolabs',
-                    '0',
-                    '',
-                    '',
-                    '',
-                    ''
-                  ];
-                  booksList.add(identificationHeader);
-
-                  final sortedBooksList = await SQLHelper.getBooks();
-
-                  // convert book list to type usable for csv
-                  for (var i = 0; i < sortedBooksList.length; i++) {
-                    // prevent null value from throwing error
-                    // String nullProtection = '';
-                    // if (sortedBooksList[i]['isbn'] != null) nullProtection = sortedBooksList[i]['isbn'];
-
-                    List<String> oneBookData = [
-                      sortedBooksList[i]['id'].toString(),
-                      sortedBooksList[i]['title'],
-                      sortedBooksList[i]['author'],
-                      sortedBooksList[i]['status'],
-                      sortedBooksList[i]['datePurchase'],
-                      sortedBooksList[i]['dateFinished'],
-                    ];
-                    // handling for new field added in db (with null value)
-                    String nullProtection = '';
-                    (sortedBooksList[i]['isbn'] != null)
-                        ? oneBookData.add(sortedBooksList[i]['isbn'])
-                        : oneBookData.add(nullProtection);
-                    (sortedBooksList[i]['publisher'] != null)
-                        ? oneBookData.add(sortedBooksList[i]['publisher'])
-                        : oneBookData.add(nullProtection);
-
-                    booksList.add(oneBookData);
-                  }
-                  logger.i('booksList = $booksList');
-
-                  String csvData = const CsvEncoder().convert(booksList);
-                  logger.i('csvData = $csvData');
-
-                  // check whether permission is given for this app or not.
-                  var permissionStatus =
-                      await Permission.manageExternalStorage.status;
-                  if (!permissionStatus.isGranted) {
-                    // ask for permission if not granted
-                    var newPermission =
-                        await Permission.manageExternalStorage.request();
-
-                    if (!newPermission.isGranted) {
-                      logger.w('permission not granted.');
-
-                      // show snack bar informing user of permission status
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Unable to export to CSV - storage access permission is not granted.'),
-                            duration: Duration(seconds: 4),
-                            showCloseIcon: true,
-                            closeIconColor: Colors.deepOrange,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    } else {
-                      logger.d('permission now granted. please try again.');
-
-                      // show snack bar informing user of permission status
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Storage access permission is now granted. Please try again to export to CSV.'),
-                            duration: Duration(seconds: 4),
-                            showCloseIcon: true,
-                            closeIconColor: Colors.deepOrange,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    }
-                  } else {
-                    // get path to export csv to
-                    // final String exportDir = (await getExternalStorageDirectory())!.path;
-                    // final String exportPath = "$exportDir/csv-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
-
-                    // init to download folder first
-                    Directory directory =
-                        Directory("/storage/emulated/0/Download");
-                    try {
-                      if (Platform.isIOS) {
-                        directory = await getApplicationDocumentsDirectory();
-                      } else {
-                        directory = Directory("/storage/emulated/0/Download");
-
-                        // fallback if download folder didn't exist
-                        if (!await directory.exists()) {
-                          await getExternalStorageDirectory();
-                        }
-                      }
-                    } catch (err, stack) {
-                      logger.e('cannot get download folder path',
-                          error: err, stackTrace: stack);
-                    }
-
-                    // const String downloadDir = "/storage/emulated/0/Download";
-                    final String downloadDir = directory.path;
-                    final String filenameCsv =
-                        "tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv";
-                    final String exportPath = "$downloadDir/$filenameCsv";
-                    logger.i('exportPath = $exportPath');
-
-                    // write the csv file
-                    final File file = File(exportPath);
-                    await file.writeAsString(csvData);
-
-                    // show snack bar with path to exported file
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'All books data is exported at Download/$filenameCsv .'),
-                          duration: const Duration(seconds: 4),
-                          showCloseIcon: true,
-                          closeIconColor: Colors.deepOrange,
-                          behavior: SnackBarBehavior.floating,
-                          // action: SnackBarAction(
-                          //   label: 'OK',
-                          //   onPressed: () {
-                          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          //   },
-                          // ),
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(15.0, 0.0, 15.0, 15.0),
-              child: FilledButton.tonal(
-                child: const Text('Import from CSV'),
-                onPressed: () async {
-                  // open file picker
-                  FilePickerResult? result =
-                      await FilePicker.pickFiles(
-                    allowedExtensions: ['csv'],
-                    type: FileType.custom,
-                  );
-
-                  if (result == null) {
-                    // user cancel selecting file
-                    logger.d('file picking cancelled');
-                  } else {
-                    String? path = result.files.first.path;
-                    logger.i('selected file path = $path');
-
-                    // get file
-                    final csvFile = File(path!).openRead();
-
-                    // convert csv to list
-                    List<List> listFromCsv = await csvFile
-                        .transform(utf8.decoder)
-                        .transform(const CsvDecoder())
-                        .toList();
-
-                    // safety check on the imported list
-                    List safetyRowFromCsv = listFromCsv.first;
-                    List defaultIdHeader = [
-                      '0',
-                      'tsundoku',
-                      'aolabs',
-                      '0',
-                      '',
-                      '',
-                      '',
-                      ''
-                    ];
-                    bool checkPass =
-                        listEquals(safetyRowFromCsv, defaultIdHeader);
-                    logger.i(
-                        'list from csv = $listFromCsv, defaultIdHeader = $defaultIdHeader, checkPass = $checkPass');
-
-                    if (checkPass == false && mounted) {
-                      // show snack bar for confirmation
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Import cancelled. Incompatible CSV file selected.'),
-                          duration: Duration(seconds: 4),
-                          showCloseIcon: true,
-                          closeIconColor: Colors.deepOrange,
-                          behavior: SnackBarBehavior.floating,
-                          // action: SnackBarAction(
-                          //   label: 'OK',
-                          //   onPressed: () {
-                          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          //   },
-                          // ),
-                        ),
-                      );
-                    } else {
-                      // remove safety row first (no need to import that)
-                      listFromCsv.removeAt(0);
-
-                      // if _books not null (got existing records) show alert dialog to add or overwrite
-                      var overwriteConfirm = 'Cancel';
-                      if (_books.isNotEmpty) {
-                        overwriteConfirm =
-                            await Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => alertForOverwrite(),
-                        ));
-                      } else {
-                        // _books list is empty, then just proceed to write data from csv
-                        overwriteConfirm = 'OK';
-                      }
-                      logger.d('overwrite confirm = $overwriteConfirm');
-
-                      // add csv books into db
-                      if ('Cancel'.compareTo(overwriteConfirm) == 0 &&
-                          mounted) {
-                        // show snack bar for confirmation
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Import cancelled. Books data won\'t be overwrite.'),
-                            duration: Duration(seconds: 4),
-                            showCloseIcon: true,
-                            closeIconColor: Colors.deepOrange,
-                            behavior: SnackBarBehavior.floating,
-                            // action: SnackBarAction(
-                            //   label: 'OK',
-                            //   onPressed: () {
-                            //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            //   },
-                            // ),
-                          ),
-                        );
-                      } else {
-                        // do db works
-                        _deleteAllAndAddBooks(listFromCsv);
-                        // show snack bar for confirmation
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'Import completed. Books data has been updated.'),
-                              duration: Duration(seconds: 4),
-                              showCloseIcon: true,
-                              closeIconColor: Colors.deepOrange,
-                              behavior: SnackBarBehavior.floating,
-                              // action: SnackBarAction(
-                              //   label: 'OK',
-                              //   onPressed: () {
-                              //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                              //   },
-                              // ),
-                            ),
-                          );
-                        }
-                      }
-                    }
-                  }
-                },
-              ),
-            ),
-            const ListTile(
-              leading: Icon(
-                Icons.code_sharp,
-                color: Colors.grey,
-              ),
-              title: Text(
-                'tsundoku v0.7.1',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          ],
+              TextSpan(text: purchaseText),
+              if (isFinished) ...[
+                const WidgetSpan(
+                  child: Icon(
+                    Icons.done_all_sharp,
+                    size: 18.0,
+                  ),
+                ),
+                TextSpan(text: ' ${book['dateFinished']}'),
+              ],
+            ],
+          ),
         ),
+        trailing: SizedBox(
+          width: 100,
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: onEdit,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: onDelete,
+              ),
+            ],
+          ),
+        ),
+        onTap: onTap,
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () async {
-          var result = await Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => const AddBookScreen(id: -1, book: null)));
-
-          // to rebuild the screen if navigator pop returns true
-          if (result != null && result) {
-            setState(() {
-              _refreshBooks();
-            });
-          }
-        },
-      ),
-
-      // floatingActionButton: AnimatedSlide(
-      //   duration: const Duration(milliseconds: 300),
-      //   offset: _showFab ? Offset.zero : const Offset(0.0, 2.0),
-      //   child: AnimatedOpacity(
-      //     duration: const Duration(milliseconds: 300),
-      //     opacity: _showFab ? 1.0 : 0.0,
-      //     child: FloatingActionButton(
-      //       child: const Icon(Icons.add),
-      //       onPressed: () async {
-      //         var result = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddBookScreen(id: -1, book: null)));
-
-      //         // to rebuild the screen if navigator pop returns true
-      //         if (result != null && result) {
-      //           setState(() {
-      //             _refreshBooks();
-      //           });
-      //         }
-      //       },
-      //     ),
-      //   ),
-      // )
     );
   }
 }
