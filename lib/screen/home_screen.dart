@@ -401,6 +401,32 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(color: Colors.grey),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15.0, 0.0, 15.0, 15.0),
+            child: OutlinedButton(
+              onPressed: () {
+                logger.i('Settings button pressed');
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
+              child: const Text.rich(
+                TextSpan(
+                  children: [
+                    WidgetSpan(
+                      child: Icon(
+                        Icons.settings,
+                        size: 18.0,
+                      ),
+                    ),
+                    TextSpan(text: ' Settings'),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
