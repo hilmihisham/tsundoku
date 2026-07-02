@@ -74,6 +74,7 @@ Version | Date | Summary
 0.7.0 |  6/8/2025 | create search function to search for records according to book title. 
 0.7.1 |  1/7/2026 | updating dependencies etc...
 0.7.2 |  1/7/2026 | settings screen is here! use your own Google Books API key to search book information using ISBN number 
+0.8.0 |  X/X/202X | updating home screen's UI
 
 ## ..other notes
 - 31/7/2021 @ old and now-archived repo - Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
