@@ -394,16 +394,16 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text('Import from CSV'),
             ),
           ),
-          const ListTile(
-            leading: Icon(
-              Icons.code_sharp,
-              color: Colors.grey,
-            ),
-            title: Text(
-              'tsundoku v0.8.0',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
+          // const ListTile(
+          //   leading: Icon(
+          //     Icons.code_sharp,
+          //     color: Colors.grey,
+          //   ),
+          //   title: Text(
+          //     'tsundoku v0.8.0',
+          //     style: TextStyle(color: Colors.grey),
+          //   ),
+          // ),
           Padding(
             padding: const EdgeInsets.fromLTRB(15.0, 0.0, 15.0, 15.0),
             child: OutlinedButton(
