@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
 import 'package:tsundoku/screen/settings_screen.dart';
+import 'package:tsundoku/screen/ticket.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,6 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // logger
   final logger = Logger();
 
+  final ScrollController _scrollController = ScrollController();
+
   // all books
   List<Map<String, dynamic>> _books = [];
 
@@ -35,6 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _countBooksNew = 0;
   int _countBooksReading = 0;
   int _countBooksFinished = 0;
+
+  final List<int> _openTickets = [];
 
   // fetch all data from db
   Future<void> _refreshBooks() async {
@@ -311,26 +317,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// return ListView widget with ListTile for each book in the list
   Widget _buildBookList() {
-    return ListView.builder(
-      padding: const EdgeInsets.only(
-        bottom: kFloatingActionButtonMargin + 60,
+    // return ListView.builder(
+    //   padding: const EdgeInsets.only(
+    //     bottom: kFloatingActionButtonMargin + 60,
+    //   ),
+    //   itemCount: _books.length,
+    //   itemBuilder: (context, index) {
+    //     final book = _books[index];
+    //     return _BookListItem(
+    //       book: book,
+    //       bookColor: bookListColor(book['status'].toString()),
+    //       onTap: () {
+    //         logger.i('tapped: ${book['title']}');
+    //         _showBookDetails(context, book['id']);
+    //       },
+    //       onEdit: () => _handleEditBook(book),
+    //       onDelete: () => _deleteItem(book['id'], book['title']),
+    //     );
+    //   },
+    // );
+
+    return Container(
+      child: Flex(
+        direction: Axis.vertical, 
+        children: [
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              physics: BouncingScrollPhysics(),
+              itemCount: _books.length,
+              itemBuilder: (context, index) {
+                return Ticket(
+                  book: _books.elementAt(index), 
+                  onClick: () => _handleClickedTicket(index)
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      itemCount: _books.length,
-      itemBuilder: (context, index) {
-        final book = _books[index];
-        return _BookListItem(
-          book: book,
-          bookColor: bookListColor(book['status'].toString()),
-          onTap: () {
-            logger.i('tapped: ${book['title']}');
-            _showBookDetails(context, book['id']);
-          },
-          onEdit: () => _handleEditBook(book),
-          onDelete: () => _deleteItem(book['id'], book['title']),
-        );
-      },
     );
+  }
+
+  bool _handleClickedTicket(int clickedTicketIndex) {
+    // Scroll to ticket position
+    // Add or remove the item of the list of open tickets
+    _openTickets.contains(clickedTicketIndex) 
+      ? _openTickets.remove(clickedTicketIndex) 
+      : _openTickets.add(clickedTicketIndex);
+    
+    // Calculate heights of the open and closed elements before the clicked item
+    double openTicketsOffset = Ticket.nominalOpenHeight * _getOpenTicketsBefore(clickedTicketIndex);
+    double closedTicketsOffset = Ticket.nominalClosedHeight * (clickedTicketIndex - _getOpenTicketsBefore(clickedTicketIndex));
+
+    double offset = openTicketsOffset + closedTicketsOffset - (Ticket.nominalClosedHeight * .5);
+
+     // Scroll to the clicked element
+    _scrollController.animateTo(
+      max(0, offset),
+      duration: Duration(seconds: 1),
+      curve: Interval(.25, 1, curve: Curves.easeOutQuad)
+    );
+    
+    // Return true to stop the notification propagation
+    return true;
+  }
+
+  int _getOpenTicketsBefore(int ticketIndex) {
+    // Search all indexes that are smaller to the current index in the list of indexes of open tickets
+    return _openTickets.where((int index) => index < ticketIndex).length;
   }
 
   Widget _buildDrawer() {
