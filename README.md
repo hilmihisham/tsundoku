@@ -14,9 +14,14 @@ The old forked design was too complicated to maintain after upgrading to flutter
 | <img src="https://www.hilmihisham.com/images/coderepo/tsundoku-1.png" alt="Screenshot from v0.7.0 #1" style="width:30%; height:auto;"> | <img src="https://www.hilmihisham.com/images/coderepo/tsundoku-2.png" alt="Screenshot from v0.7.0 #2" style="width:30%; height:auto;">
 
 ## Download
-It's 7th August 2025, and tsundoku v0.7.0 apk is now here!!!
+Check the release page for the latest version of the app, and [download them there](https://github.com/hilmihisham/tsundoku/releases).
 
-:package: [tsundoku-v0.7.0.apk](https://github.com/hilmihisham/tsundoku/releases/tag/v0.7.0)
+As a piece of history, I'm just gonna leave my previous excitements below. v0.7.0 is my first release of the app, and has been updated with newer version since.
+
+> It's 7th August 2025, and tsundoku v0.7.0 apk is now here!!!
+>
+> :package: [tsundoku-v0.7.0.apk](https://github.com/hilmihisham/tsundoku/releases/tag/v0.7.0)
+
 
 ## Does it work?
 Short answer: Yes.
