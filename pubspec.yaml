@@ -24,6 +24,12 @@ dependencies:
   mobile_scanner: ^7.0.0
   settings_ui: ^3.0.1
   shared_preferences: ^2.4.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  image_path: "assets/icons/icon-1.png"
+  android: true
+  ios: true
 
 dev_dependencies:
   flutter_test:
