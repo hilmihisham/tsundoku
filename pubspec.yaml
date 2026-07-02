@@ -1,7 +1,7 @@
 name: tsundoku
 description: A simple flutter app to make a record and save all the data of your physical books into one organized view..
 publish_to: 'none'
-version: 0.7.3
+version: 0.7.4
 
 environment:
   sdk: '>=3.0.6 <4.0.0'
@@ -39,7 +39,7 @@ flutter_native_splash:
   ios: true
   android_12:
     color: "#C1E1C1"
-    image: "assets/icons/icon-1.png"
+    image: "assets/icons/splash-icon-1.png"
     icon_background_color: "#D2E9D2"
 
 dev_dependencies:
