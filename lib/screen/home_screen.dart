@@ -5,6 +5,7 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
@@ -55,6 +56,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _countBooksFinished = countFinishedBooks!;
       _isLoading = false;
     });
+
+    FlutterNativeSplash.remove(); // remove splash screen after loading books
 
     logger.i(
         "new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");

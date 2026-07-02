@@ -14,9 +14,14 @@ The old forked design was too complicated to maintain after upgrading to flutter
 | <img src="https://www.hilmihisham.com/images/coderepo/tsundoku-1.png" alt="Screenshot from v0.7.0 #1" style="width:30%; height:auto;"> | <img src="https://www.hilmihisham.com/images/coderepo/tsundoku-2.png" alt="Screenshot from v0.7.0 #2" style="width:30%; height:auto;">
 
 ## Download
-It's 7th August 2025, and tsundoku v0.7.0 apk is now here!!!
+Check the release page for the latest version of the app, and [download them there](https://github.com/hilmihisham/tsundoku/releases).
 
-:package: [tsundoku-v0.7.0.apk](https://github.com/hilmihisham/tsundoku/releases/tag/v0.7.0)
+As a piece of history, I'm just gonna leave my previous excitements below. v0.7.0 is my first release of the app, and has been updated with newer version since.
+
+> It's 7th August 2025, and tsundoku v0.7.0 apk is now here!!!
+>
+> :package: [tsundoku-v0.7.0.apk](https://github.com/hilmihisham/tsundoku/releases/tag/v0.7.0)
+
 
 ## Does it work?
 Short answer: Yes.
@@ -74,6 +79,8 @@ Version | Date | Summary
 0.7.0 |  6/8/2025 | create search function to search for records according to book title. 
 0.7.1 |  1/7/2026 | updating dependencies etc...
 0.7.2 |  1/7/2026 | settings screen is here! use your own Google Books API key to search book information using ISBN number 
+0.7.3 |  2/7/2026 | finally doing something for this app's icon and splash screen
+0.7.4 |  2/7/2026 | forgot to check splash screen on latest android version before releasing 0.7.3 =.=" so here's a very minor update to fix that
 0.8.0 |  X/X/202X | updating home screen's UI
 
 ## ..other notes
@@ -84,3 +91,4 @@ Version | Date | Summary
   - GitHub flow reference: [The Ultimate Guide to Git Branching Strategies](https://blog.prateekjain.dev/the-ultimate-guide-to-git-branching-strategies-6324f1aceac2) 
   <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*6HtL5CWvMkjCPKH5_oMLIw.png" style="width:60%; height:auto;">
 - 1/7/2026 - gotta admit, i need some help with this codebase (it's a learning experience, it's a bit spaghetti), so i employed the help of GitHub Copilot (still on free version tho, as i'm still testing the water on this) to help me cleaning up a bit and adding some new features.
+- 2/7/2026 - thank you flaticon for the creation of this app's icon! as i'm using the image for free, here's small attribution for the source of the image used: [Library icons created by popo2021 - Flaticon](https://www.flaticon.com/free-icons/library)
