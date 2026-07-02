@@ -5,7 +5,6 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
@@ -27,16 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // logger
   final logger = Logger();
 
-  // to control showing floating action button
-  // bool _showFab = true;
-
   // all books
   List<Map<String, dynamic>> _books = [];
-
-  // books separate by status
-  // List<Map<String, dynamic>> _booksNew = [];
-  // List<Map<String, dynamic>> _booksReading = [];
-  // List<Map<String, dynamic>> _booksFinished = [];
 
   bool _isLoading = true; // bool for checking loading book list
 
@@ -83,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// navigate to AddBookScreen with book data for editing
   Future<void> _handleEditBook(Map<String, dynamic> book) async {
     if (!mounted) return;
 
@@ -397,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.grey,
             ),
             title: Text(
-              'tsundoku v0.7.2',
+              'tsundoku v0.8.0',
               style: TextStyle(color: Colors.grey),
             ),
           ),
@@ -443,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // delete a book
+  /// delete book from db and show snackbar
   void _deleteItem(int id, String title) async {
     await SQLHelper.deleteBook(id);
     if (mounted) {
@@ -454,12 +446,6 @@ class _HomeScreenState extends State<HomeScreen> {
           showCloseIcon: true,
           closeIconColor: Colors.deepOrange,
           behavior: SnackBarBehavior.floating,
-          // action: SnackBarAction(
-          //   label: 'OK',
-          //   onPressed: () {
-          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          //   },
-          // ),
         ),
       );
     }
@@ -477,6 +463,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _refreshBooks();
   }
 
+  /// return Color object based on book status
+  /// 
+  /// 0 = new (red), 1 = reading (yellow), 2 = finished (green)
   Color bookListColor(String status) {
     Color result = Colors.grey;
 
@@ -579,6 +568,14 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _BookListItem extends StatelessWidget {
+  /// create a Card Widget for each book item in the list
+  /// 
+  /// parameters:
+  /// - book: Map`<`String, dynamic`>` containing book data
+  /// - bookColor: Color for the Card background based on book status
+  /// - onTap: VoidCallback for when the Card is tapped
+  /// - onEdit: VoidCallback for when the edit button is pressed
+  /// - onDelete: VoidCallback for when the delete button is pressed
   const _BookListItem({
     required this.book,
     required this.bookColor,
