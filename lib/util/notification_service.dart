@@ -36,8 +36,8 @@ class NotificationService {
     return const NotificationDetails(
       android: AndroidNotificationDetails(
         'tsundoku_notif_channel', // unique channel ID
-        'Weekly Tsundoku Notifications', // channel name
-        channelDescription: 'Weekly Notifications for Tsundoku app showing your current book count', // channel description
+        'Weekly Reminder', // channel name
+        channelDescription: 'Send a reading reminder for the weekend', // channel description
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
@@ -60,7 +60,7 @@ class NotificationService {
       scheduledDate: tz.TZDateTime.from(scheduledDateTime, tz.local),
       notificationDetails: _notificationDetails(),
       matchDateTimeComponents: DateTimeComponents.time, // Repeat daily at the same time
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, // Ensure the notification is delivered even in low power mode
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, // Ensure the notification is delivered even in low power mode
     );
   }
 
@@ -78,7 +78,7 @@ class NotificationService {
       scheduledDate: tz.TZDateTime.now(tz.local).add(Duration(seconds: secondsFromNow)),
       notificationDetails: _notificationDetails(),
       matchDateTimeComponents: DateTimeComponents.time, // Repeat daily at the same time
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, // Ensure the notification is delivered even in low power mode
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, // Ensure the notification is delivered even in low power mode
     );
   }
 
