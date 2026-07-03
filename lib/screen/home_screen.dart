@@ -140,79 +140,143 @@ class _HomeScreenState extends State<HomeScreen> {
     final csvData = const CsvEncoder().convert(booksList);
     logger.i('csvData = $csvData');
 
-    final permissionStatus = await Permission.manageExternalStorage.status;
-    if (!permissionStatus.isGranted) {
-      final newPermission = await Permission.manageExternalStorage.request();
+    // final permissionStatus = await Permission.manageExternalStorage.status;
+    // if (!permissionStatus.isGranted) {
+    //   final newPermission = await Permission.manageExternalStorage.request();
 
-      if (!newPermission.isGranted) {
-        logger.w('permission not granted.');
+    //   if (!newPermission.isGranted) {
+    //     logger.w('permission not granted.');
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Unable to export to CSV - storage access permission is not granted.'),
-              duration: Duration(seconds: 4),
-              showCloseIcon: true,
-              closeIconColor: Colors.deepOrange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } else {
-        logger.d('permission now granted. please try again.');
+    //     if (mounted) {
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         const SnackBar(
+    //           content: Text(
+    //               'Unable to export to CSV - storage access permission is not granted.'),
+    //           duration: Duration(seconds: 4),
+    //           showCloseIcon: true,
+    //           closeIconColor: Colors.deepOrange,
+    //           behavior: SnackBarBehavior.floating,
+    //         ),
+    //       );
+    //     }
+    //   } else {
+    //     logger.d('permission now granted. please try again.');
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Storage access permission is now granted. Please try again to export to CSV.'),
-              duration: Duration(seconds: 4),
-              showCloseIcon: true,
-              closeIconColor: Colors.deepOrange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-      return;
-    }
+    //     if (mounted) {
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         const SnackBar(
+    //           content: Text(
+    //               'Storage access permission is now granted. Please try again to export to CSV.'),
+    //           duration: Duration(seconds: 4),
+    //           showCloseIcon: true,
+    //           closeIconColor: Colors.deepOrange,
+    //           behavior: SnackBarBehavior.floating,
+    //         ),
+    //       );
+    //     }
+    //   }
+    //   return;
+    // }
 
-    Directory directory = Directory('/storage/emulated/0/Download');
     try {
+      // set directory to save csv file
+      Directory? directory;
       if (Platform.isIOS) {
         directory = await getApplicationDocumentsDirectory();
       } else {
         directory = Directory('/storage/emulated/0/Download');
 
-        if (!await directory.exists()) {
-          await getExternalStorageDirectory();
+        // if (!await directory.exists()) {
+        //   directory =  await getExternalStorageDirectory();
+        // }
+      }
+
+      // set up csv file name and path
+      final filenameCsv = 'tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv';
+      String fileSaveLocation = '';
+
+      if (await directory.exists()) {
+        final downloadDir = directory.path;
+        final exportPath = '$downloadDir/$filenameCsv';
+        logger.i('exportPath = $exportPath');
+
+        // write csv data to file
+        final file = File(exportPath);
+        await file.writeAsString(csvData);
+
+        fileSaveLocation = 'Download';
+      }
+      else {
+        // throw Exception('Download directory not exists');
+
+        // can't find the predetermined Download folder, let user to choose own life path
+        String? outputFile = await FilePicker.saveFile(
+          dialogTitle: 'Please select where to save the backup file:',
+          fileName: filenameCsv,
+          bytes: utf8.encode(csvData)
+        );
+
+        if (outputFile != null) {
+          logger.i('Backup file saved: $outputFile');
+
+          fileSaveLocation = outputFile.substring((outputFile.indexOf(':') + 1), (outputFile.indexOf(filenameCsv) - 1));
+        }
+        else {
+          // user exiting file picker without saving
+          throw Exception('Exporting backup file cancelled.');
         }
       }
+
+      // show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('All books data is exported at $fileSaveLocation/$filenameCsv .'),
+            duration: const Duration(seconds: 4),
+            showCloseIcon: true,
+            closeIconColor: Colors.deepOrange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (err, stack) {
-      logger.e('cannot get download folder path', error: err, stackTrace: stack);
+      logger.e('Error while exporting backup file.', error: err, stackTrace: stack);
+      String errorMsg = err.toString();
+      
+      // show failed message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error while exporting backup file. ${errorMsg.split(': ')[1]}'),
+            duration: const Duration(seconds: 4),
+            showCloseIcon: true,
+            closeIconColor: Colors.deepOrange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
 
-    final downloadDir = directory.path;
-    final filenameCsv =
-        'tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv';
-    final exportPath = '$downloadDir/$filenameCsv';
-    logger.i('exportPath = $exportPath');
+    // final downloadDir = directory.path;
+    // final filenameCsv =
+    //     'tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv';
+    // final exportPath = '$downloadDir/$filenameCsv';
+    // logger.i('exportPath = $exportPath');
 
-    final file = File(exportPath);
-    await file.writeAsString(csvData);
+    // final file = File(exportPath);
+    // await file.writeAsString(csvData);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('All books data is exported at Download/$filenameCsv .'),
-          duration: const Duration(seconds: 4),
-          showCloseIcon: true,
-          closeIconColor: Colors.deepOrange,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    // if (mounted) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('All books data is exported at Download/$filenameCsv .'),
+    //       duration: const Duration(seconds: 4),
+    //       showCloseIcon: true,
+    //       closeIconColor: Colors.deepOrange,
+    //       behavior: SnackBarBehavior.floating,
+    //     ),
+    //   );
+    // }
   }
 
   Future<void> _handleImportCsv() async {
