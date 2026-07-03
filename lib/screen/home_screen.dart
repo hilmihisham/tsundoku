@@ -140,55 +140,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final csvData = const CsvEncoder().convert(booksList);
     logger.i('csvData = $csvData');
 
-    // final permissionStatus = await Permission.manageExternalStorage.status;
-    // if (!permissionStatus.isGranted) {
-    //   final newPermission = await Permission.manageExternalStorage.request();
-
-    //   if (!newPermission.isGranted) {
-    //     logger.w('permission not granted.');
-
-    //     if (mounted) {
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         const SnackBar(
-    //           content: Text(
-    //               'Unable to export to CSV - storage access permission is not granted.'),
-    //           duration: Duration(seconds: 4),
-    //           showCloseIcon: true,
-    //           closeIconColor: Colors.deepOrange,
-    //           behavior: SnackBarBehavior.floating,
-    //         ),
-    //       );
-    //     }
-    //   } else {
-    //     logger.d('permission now granted. please try again.');
-
-    //     if (mounted) {
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         const SnackBar(
-    //           content: Text(
-    //               'Storage access permission is now granted. Please try again to export to CSV.'),
-    //           duration: Duration(seconds: 4),
-    //           showCloseIcon: true,
-    //           closeIconColor: Colors.deepOrange,
-    //           behavior: SnackBarBehavior.floating,
-    //         ),
-    //       );
-    //     }
-    //   }
-    //   return;
-    // }
-
     try {
-      // set directory to save csv file
+      // set default directory to save csv file
       Directory? directory;
       if (Platform.isIOS) {
         directory = await getApplicationDocumentsDirectory();
       } else {
         directory = Directory('/storage/emulated/0/Download');
-
-        // if (!await directory.exists()) {
-        //   directory =  await getExternalStorageDirectory();
-        // }
       }
 
       // set up csv file name and path
@@ -207,9 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
         fileSaveLocation = 'Download';
       }
       else {
-        // throw Exception('Download directory not exists');
-
-        // can't find the predetermined Download folder, let user to choose own life path
+        // can't find the default Download folder, let user to choose own life path
         String? outputFile = await FilePicker.saveFile(
           dialogTitle: 'Please select where to save the backup file:',
           fileName: filenameCsv,
@@ -256,27 +212,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
-
-    // final downloadDir = directory.path;
-    // final filenameCsv =
-    //     'tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv';
-    // final exportPath = '$downloadDir/$filenameCsv';
-    // logger.i('exportPath = $exportPath');
-
-    // final file = File(exportPath);
-    // await file.writeAsString(csvData);
-
-    // if (mounted) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('All books data is exported at Download/$filenameCsv .'),
-    //       duration: const Duration(seconds: 4),
-    //       showCloseIcon: true,
-    //       closeIconColor: Colors.deepOrange,
-    //       behavior: SnackBarBehavior.floating,
-    //     ),
-    //   );
-    // }
   }
 
   Future<void> _handleImportCsv() async {
