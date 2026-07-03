@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tsundoku/util/notification_service.dart';
@@ -115,22 +116,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
       int daysUntilNextSaturday = (DateTime.saturday - now.weekday + 7) % 7;
       DateTime nextSaturday0905am = DateTime(now.year, now.month, now.day, 9, 5).add(Duration(days: daysUntilNextSaturday == 0 ? 7 : daysUntilNextSaturday));
 
-      // for 
-      int daysUntilNextFriday = (DateTime.friday - now.weekday + 7) % 7;
-      DateTime nextFridayTestTime = DateTime(now.year, now.month, now.day, 2, 20).add(Duration(days: daysUntilNextFriday == 0 ? 7 : daysUntilNextFriday));
+      // for testing purposes
+      // int daysUntilNextSomeday = (DateTime.saturday - now.weekday + 7) % 7;
+      // DateTime nextTestTime = DateTime(now.year, now.month, now.day, 1, 41).add(Duration(days: daysUntilNextSomeday == 0 ? 7 : daysUntilNextSomeday));
 
       await _notificationService.showScheduledNotification(
         id: 1,
-        title: 'Weekly tsundoku Update',
-        body: 'Check your current book count in tsundoku. Get some reading done this weekend!',
-        scheduledDateTime: nextFridayTestTime,
+        title: 'Weekly reminder',
+        body: 'Let\'s get some reading done this weekend. Check your current book count in tsundoku.',
+        scheduledDateTime: nextSaturday0905am,
       );
+
+      // for express testing (next xx seconds)
+      // await _notificationService.showNextSecondsNotification(
+      //   id: 999,
+      //   title: 'tsundoku TestNotif',
+      //   body: 'Check check rock rock\'s!',
+      //   secondsFromNow: 10,
+      // );
     } 
     else {
       // Cancel the scheduled notification
       logger.i('Cancelling weekly notification');
       await _notificationService.cancelNotifications(1);
     }
+  }
+
+  Future<bool> requestNotificationPermission(BuildContext context) async {
+    // check current status
+    final notificationPermissionStatus = await Permission.notification.status;
+
+    if (notificationPermissionStatus.isGranted) {
+      // permission is already granted
+      return true;
+    } 
+    else if (notificationPermissionStatus.isDenied) {
+      logger.i('Notification permission status: isDenied. Requesting permission.');
+
+      // request permission if it hasn't been enabled yet
+      await Permission.notification.request();
+    } 
+    else if (notificationPermissionStatus.isPermanentlyDenied) {
+      logger.i('notification permission status: isPermanentlyDenied');
+      // show popup notice if they already hard-denied permission (don't show again selected)
+      if (context.mounted) {
+        _showNotificationPermissionPermanentlyDeniedDialog(context);
+      }
+    }
+
+    // get current status after all the shenanigans above
+    final permissionStatusAfterRequest = await Permission.notification.status;
+    if (permissionStatusAfterRequest.isGranted) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  void _showNotificationPermissionPermanentlyDeniedDialog(BuildContext context) {
+
+    RichText contentText = RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 15.0,
+          color: Colors.black87,
+        ),
+        children: [
+          TextSpan(text: 'tsundoku need permission to send notification.\n\n'),
+          TextSpan(text: 'Since this was permanently disabled, please '),
+          TextSpan(
+            text: 'allow permission for notification',
+            style: const TextStyle(fontWeight: FontWeight.bold)
+          ),
+          TextSpan(text: ' manually in your app setting.'),
+        ]
+      ),
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Notification permission required'),
+          content: contentText,
+          // content: const Text('tsundoku need permission to send notification. Since this was permanently disabled, please allow permission for notification manually in your app setting.'),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            TextButton(
+              child: const Text('Open Settings'),
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await openAppSettings();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -205,10 +290,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text('Enable Weekly Notification'),
                   description: Text('Receive a weekly notification showing your current book count.'),
                   initialValue: _isWeeklyNotificationEnabled,
-                  onToggle: (bool value) {
+                  onToggle: (bool value) async {
                     logger.i('_isWeeklyNotificationEnabled: $value');
+
+                    // trigger for notification permission if true
+                    bool permissionStatus = false;
+                    if (value == true) {
+                      permissionStatus = await requestNotificationPermission(context); 
+                    }
+
                     setState(() {
-                      _isWeeklyNotificationEnabled = value;
+                      if (value == true && permissionStatus == true) {
+                        _isWeeklyNotificationEnabled = true;
+                      }
+                      else {
+                        _isWeeklyNotificationEnabled = false;
+                      }
                     });
                   },
                 ),
