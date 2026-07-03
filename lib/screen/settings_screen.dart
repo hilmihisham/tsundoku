@@ -270,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 8),
                         Text(
                           _hasSavedApiKey
-                              ? 'A saved API key is currently configured.'
+                              ? 'API key is currently configured.'
                               : 'No API key is currently configured.',
                           style: TextStyle(
                             color: _hasSavedApiKey ? Colors.green.shade700 : Colors.grey.shade700,
