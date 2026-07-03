@@ -158,6 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } 
     else if (notificationPermissionStatus.isPermanentlyDenied) {
       logger.i('notification permission status: isPermanentlyDenied');
+      
       // show popup notice if they already hard-denied permission (don't show again selected)
       if (context.mounted) {
         _showNotificationPermissionPermanentlyDeniedDialog(context);
@@ -165,7 +166,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     // get current status after all the shenanigans above
-    // final permissionStatusAfterRequest = await Permission.notification.status;
     if (notificationPermissionStatus.isGranted) {
       return true;
     } else {
