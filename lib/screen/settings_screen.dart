@@ -144,7 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<bool> requestNotificationPermission(BuildContext context) async {
     // check current status
-    final notificationPermissionStatus = await Permission.notification.status;
+    PermissionStatus notificationPermissionStatus = await Permission.notification.status;
 
     if (notificationPermissionStatus.isGranted) {
       // permission is already granted
@@ -154,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       logger.i('Notification permission status: isDenied. Requesting permission.');
 
       // request permission if it hasn't been enabled yet
-      await Permission.notification.request();
+      notificationPermissionStatus = await Permission.notification.request();
     } 
     else if (notificationPermissionStatus.isPermanentlyDenied) {
       logger.i('notification permission status: isPermanentlyDenied');
@@ -165,8 +165,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     // get current status after all the shenanigans above
-    final permissionStatusAfterRequest = await Permission.notification.status;
-    if (permissionStatusAfterRequest.isGranted) {
+    // final permissionStatusAfterRequest = await Permission.notification.status;
+    if (notificationPermissionStatus.isGranted) {
       return true;
     } else {
       return false;
