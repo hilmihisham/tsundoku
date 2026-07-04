@@ -3,16 +3,14 @@ import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-// import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
 import 'package:tsundoku/screen/settings_screen.dart';
+import 'package:tsundoku/util/constants.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -243,19 +241,8 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
 
     final safetyRowFromCsv = listFromCsv.first;
-    final defaultIdHeader = [
-      '0',
-      'tsundoku',
-      'aolabs',
-      '0',
-      '',
-      '',
-      '',
-      ''
-    ];
-    final checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
-    logger.i(
-        'list from csv = $listFromCsv, defaultIdHeader = $defaultIdHeader, checkPass = $checkPass');
+    final checkPass = _checkImportedCsvHeader(safetyRowFromCsv);
+    logger.i('safety row from csv = $safetyRowFromCsv, checkPass = $checkPass');
 
     if (checkPass == false) {
       messenger.showSnackBar(
@@ -316,6 +303,24 @@ class _HomeScreenState extends State<HomeScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  /// check if the imported csv is valid for our app (by validating its header row values)
+  bool _checkImportedCsvHeader(List csvRow) {
+    if (
+      csvRow.length >= 4
+      && csvRow[0] == Constants.csvHeader.column1
+      && csvRow[1] == Constants.csvHeader.column2
+      && csvRow[2] == Constants.csvHeader.column3
+      && csvRow[3] == Constants.csvHeader.column4
+    ) {
+      logger.i('Imported CSV has a valid header values.');
+      return true;
+    }
+    else {
+      logger.e('Imported CSV didn\'t pass header validation');
+      return false;
+    }
   }
 
   Widget _buildBookList() {
