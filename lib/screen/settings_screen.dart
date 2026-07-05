@@ -3,6 +3,7 @@ import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tsundoku/util/constants.dart';
 import 'package:tsundoku/util/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -317,7 +318,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   leading: const Icon(Icons.info_outline_rounded),
                   title: const Text('App version'),
-                  value: const Text('0.8.0'),
+                  value: Text(Constants.appVersion.versionNumber),
                 ),
               ]
             ),

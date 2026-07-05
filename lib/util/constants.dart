@@ -1,7 +1,14 @@
-import 'package:flutter/material.dart';
 
 class Constants {
+  static const appVersion = _AppVersion();
   static const csvHeader = _CsvHeader();
+}
+
+class _AppVersion {
+  const _AppVersion();
+
+  // reminder: also go update version number in pubspec & readme file
+  final String versionNumber = '0.9.0';
 }
 
 class _CsvHeader {
