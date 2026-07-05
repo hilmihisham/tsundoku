@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:tsundoku/screen/base_screen.dart';
+import 'package:tsundoku/util/notification_service.dart';
 
-void main() {
+void main() async {
   // preserve splash screen until first home screenloading is complete
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // initialize notification service globally
+  await NotificationService().initNotifications();
   
   runApp(const MainApp());
 }

@@ -3,16 +3,14 @@ import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-// import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
 import 'package:tsundoku/screen/settings_screen.dart';
+import 'package:tsundoku/util/constants.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -140,78 +138,77 @@ class _HomeScreenState extends State<HomeScreen> {
     final csvData = const CsvEncoder().convert(booksList);
     logger.i('csvData = $csvData');
 
-    final permissionStatus = await Permission.manageExternalStorage.status;
-    if (!permissionStatus.isGranted) {
-      final newPermission = await Permission.manageExternalStorage.request();
-
-      if (!newPermission.isGranted) {
-        logger.w('permission not granted.');
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Unable to export to CSV - storage access permission is not granted.'),
-              duration: Duration(seconds: 4),
-              showCloseIcon: true,
-              closeIconColor: Colors.deepOrange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } else {
-        logger.d('permission now granted. please try again.');
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Storage access permission is now granted. Please try again to export to CSV.'),
-              duration: Duration(seconds: 4),
-              showCloseIcon: true,
-              closeIconColor: Colors.deepOrange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-      return;
-    }
-
-    Directory directory = Directory('/storage/emulated/0/Download');
     try {
+      // set default directory to save csv file
+      Directory? directory;
       if (Platform.isIOS) {
         directory = await getApplicationDocumentsDirectory();
       } else {
         directory = Directory('/storage/emulated/0/Download');
+      }
 
-        if (!await directory.exists()) {
-          await getExternalStorageDirectory();
+      // set up csv file name and path
+      final filenameCsv = 'tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv';
+      String fileSaveLocation = '';
+
+      if (await directory.exists()) {
+        final downloadDir = directory.path;
+        final exportPath = '$downloadDir/$filenameCsv';
+        logger.i('exportPath = $exportPath');
+
+        // write csv data to file
+        final file = File(exportPath);
+        await file.writeAsString(csvData);
+
+        fileSaveLocation = 'Download';
+      }
+      else {
+        // can't find the default Download folder, let user to choose own life path
+        String? outputFile = await FilePicker.saveFile(
+          dialogTitle: 'Please select where to save the backup file:',
+          fileName: filenameCsv,
+          bytes: utf8.encode(csvData)
+        );
+
+        if (outputFile != null) {
+          logger.i('Backup file saved: $outputFile');
+
+          fileSaveLocation = outputFile.substring((outputFile.indexOf(':') + 1), (outputFile.indexOf(filenameCsv) - 1));
+        }
+        else {
+          // user exiting file picker without saving
+          throw Exception('Exporting backup file cancelled.');
         }
       }
+
+      // show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('All books data is exported at $fileSaveLocation/$filenameCsv .'),
+            duration: const Duration(seconds: 4),
+            showCloseIcon: true,
+            closeIconColor: Colors.deepOrange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (err, stack) {
-      logger.e('cannot get download folder path', error: err, stackTrace: stack);
-    }
-
-    final downloadDir = directory.path;
-    final filenameCsv =
-        'tsundoku-${DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now())}.csv';
-    final exportPath = '$downloadDir/$filenameCsv';
-    logger.i('exportPath = $exportPath');
-
-    final file = File(exportPath);
-    await file.writeAsString(csvData);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('All books data is exported at Download/$filenameCsv .'),
-          duration: const Duration(seconds: 4),
-          showCloseIcon: true,
-          closeIconColor: Colors.deepOrange,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      logger.e('Error while exporting backup file.', error: err, stackTrace: stack);
+      String errorMsg = err.toString();
+      
+      // show failed message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error while exporting backup file. ${errorMsg.split(': ')[1]}'),
+            duration: const Duration(seconds: 4),
+            showCloseIcon: true,
+            closeIconColor: Colors.deepOrange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -244,19 +241,8 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
 
     final safetyRowFromCsv = listFromCsv.first;
-    final defaultIdHeader = [
-      '0',
-      'tsundoku',
-      'aolabs',
-      '0',
-      '',
-      '',
-      '',
-      ''
-    ];
-    final checkPass = listEquals(safetyRowFromCsv, defaultIdHeader);
-    logger.i(
-        'list from csv = $listFromCsv, defaultIdHeader = $defaultIdHeader, checkPass = $checkPass');
+    final checkPass = _checkImportedCsvHeader(safetyRowFromCsv);
+    logger.i('safety row from csv = $safetyRowFromCsv, checkPass = $checkPass');
 
     if (checkPass == false) {
       messenger.showSnackBar(
@@ -317,6 +303,24 @@ class _HomeScreenState extends State<HomeScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  /// check if the imported csv is valid for our app (by validating its header row values)
+  bool _checkImportedCsvHeader(List csvRow) {
+    if (
+      csvRow.length >= 4
+      && csvRow[0] == Constants.csvHeader.column1
+      && csvRow[1] == Constants.csvHeader.column2
+      && csvRow[2] == Constants.csvHeader.column3
+      && csvRow[3] == Constants.csvHeader.column4
+    ) {
+      logger.i('Imported CSV has a valid header values.');
+      return true;
+    }
+    else {
+      logger.e('Imported CSV didn\'t pass header validation');
+      return false;
+    }
   }
 
   Widget _buildBookList() {
@@ -392,16 +396,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: FilledButton.tonal(
               onPressed: _handleImportCsv,
               child: const Text('Import from CSV'),
-            ),
-          ),
-          const ListTile(
-            leading: Icon(
-              Icons.code_sharp,
-              color: Colors.grey,
-            ),
-            title: Text(
-              'tsundoku v0.7.4',
-              style: TextStyle(color: Colors.grey),
             ),
           ),
           Padding(

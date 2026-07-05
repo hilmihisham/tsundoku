@@ -1,7 +1,7 @@
 name: tsundoku
 description: A simple flutter app to make a record and save all the data of your physical books into one organized view..
 publish_to: 'none'
-version: 0.7.4
+version: 0.8.0
 
 environment:
   sdk: '>=3.0.6 <4.0.0'
@@ -20,12 +20,14 @@ dependencies:
     git:
       url: https://github.com/hilmihisham/books_finder
       ref: master
-  change_app_package_name: ^1.1.0
+  change_app_package_name: ^1.5.0
   mobile_scanner: ^7.0.0
   settings_ui: ^3.0.1
   shared_preferences: ^2.4.0
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.7
+  flutter_local_notifications: ^22.0.1
+  timezone: ^0.11.1
 
 flutter_launcher_icons:
   image_path: "assets/icons/icon-1.png"
