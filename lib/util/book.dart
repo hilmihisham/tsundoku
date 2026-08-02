@@ -5,6 +5,7 @@ class Book {
   final String status;
   final String? datePurchase;
   final String? dateFinished;
+  final String? dateCreated;
   final String? isbn;
   final String? publisher;
 
@@ -15,6 +16,7 @@ class Book {
     required this.status,
     this.datePurchase,
     this.dateFinished,
+    this.dateCreated,
     this.isbn,
     this.publisher,
   });
@@ -27,6 +29,7 @@ class Book {
       status: map['status'] ?? '0',
       datePurchase: map['datePurchase'],
       dateFinished: map['dateFinished'],
+      dateCreated: map['dateCreated'],
       isbn: map['isbn'],
       publisher: map['publisher'],
     );
@@ -40,8 +43,18 @@ class Book {
       'status': status,
       'datePurchase': datePurchase,
       'dateFinished': dateFinished,
+      'dateCreated': dateCreated,
       'isbn': isbn,
       'publisher': publisher,
     };
   }
+
+  // helper methods below
+  bool get isNew => status == '0';
+  bool get isReading => status == '1';
+  bool get isFinished => status == '2';
+  
+  String get displayTitle => title.isNotEmpty ? title : 'Untitled';
+
+  String get displayAuthor => author ?? 'Unknown Author';
 }
