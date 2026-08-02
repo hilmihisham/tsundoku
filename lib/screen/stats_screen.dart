@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:tsundoku/util/book.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 class StatsScreen extends StatefulWidget {
-  const StatsScreen({Key? key}) : super(key: key);
+  const StatsScreen({super.key});
 
   @override
   State<StatsScreen> createState() => _StatsScreenState();
@@ -25,12 +26,12 @@ class _StatsScreenState extends State<StatsScreen> {
   int latestBoughtDays = 0;
   int latestFinishedDays = 0;
 
-  Map<String, dynamic> longestDurationBook = {};
-  Map<String, dynamic> shortestDurationBook = {};
-  Map<String, dynamic> longestDurationNewBook = {};
-  Map<String, dynamic> longestNowReadingBook = {};
-  Map<String, dynamic> latestBoughtBook = {};
-  Map<String, dynamic> latestFinishedBook = {};
+  Book? longestDurationBook;
+  Book? shortestDurationBook;
+  Book? longestDurationNewBook;
+  Book? longestNowReadingBook;
+  Book? latestBoughtBook;
+  Book? latestFinishedBook;
 
   @override
   void initState() {
@@ -44,16 +45,15 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   void _getAllStats() async {
-
     // --------------- (0) simplest stats, book count [start] ---------------
     final countNewBooks = await SQLHelper.getCountByStatus("0");
-    _countBooksNew = countNewBooks!;
+    _countBooksNew = countNewBooks ?? 0;
 
     final countReadingBooks = await SQLHelper.getCountByStatus("1");
-    _countBooksReading = countReadingBooks!;
+    _countBooksReading = countReadingBooks ?? 0;
 
     final countFinishedBooks = await SQLHelper.getCountByStatus("2");
-    _countBooksFinished = countFinishedBooks!;
+    _countBooksFinished = countFinishedBooks ?? 0;
 
     logger.i("new = $_countBooksNew, reading = $_countBooksReading, finished = $_countBooksFinished");
     // ---------------- (0) simplest stats, book count [end] ----------------
@@ -62,68 +62,95 @@ class _StatsScreenState extends State<StatsScreen> {
     final dataLatestBoughtAndFinished = await SQLHelper.getLatestBooksInEachStatus();
     logger.i('0.1\n\n$dataLatestBoughtAndFinished');
 
-    // sort the query result
     if (dataLatestBoughtAndFinished.isNotEmpty) {
-
-      for (var element in dataLatestBoughtAndFinished) {
-        if (element['status'] == '0') {
-          latestBoughtBook.addAll(element);
-          latestBoughtDays = daysBetween(DateTime.parse(element['datePurchase']), DateTime.now());
+      for (final element in dataLatestBoughtAndFinished) {
+        if (element.isNew) {
+          latestBoughtBook = element;
+          if (element.datePurchase != null && element.datePurchase!.isNotEmpty) {
+            latestBoughtDays = daysBetween(DateTime.parse(element.datePurchase!), DateTime.now());
+          }
           logger.d('latest bought book = $latestBoughtBook');
         }
 
-        if (element['status'] == '2') {
-          latestFinishedBook.addAll(element);
-          latestFinishedDays = daysBetween(DateTime.parse(element['dateFinished']), DateTime.now());
+        if (element.isFinished) {
+          latestFinishedBook = element;
+          if (element.dateFinished != null && element.dateFinished!.isNotEmpty) {
+            latestFinishedDays = daysBetween(DateTime.parse(element.dateFinished!), DateTime.now());
+          }
           logger.d('latest finished book = $latestFinishedBook');
         }
       }
 
-      // check if there's no latest bought or latest finished book
-      if (latestBoughtBook.isEmpty) {
-        final noBookBought = <String, dynamic>{'title': 'Nope, no new book in collection', 'author': 'no one', 'datePurchase':'non-existent date', 'isbn':'-1'};
-        latestBoughtBook.addEntries(noBookBought.entries);
-        logger.d('latest bought book = $latestBoughtBook');
-      }
-      if (latestFinishedBook.isEmpty) {
-        final noBookFinished = <String, dynamic>{'title': 'Nope, nothing is finished yet', 'author': 'no one', 'dateFinished':'non-existent date', 'isbn':'-1'};
-        latestFinishedBook.addEntries(noBookFinished.entries);
-        logger.d('latest finished book = $latestFinishedBook');
-      }
-    }
-    else {
-      // no data
-      final noBookBought = <String, dynamic>{'title': 'Nope, no new book in collection', 'author': 'no one', 'datePurchase':'non-existent date', 'isbn':'-1'};
-      latestBoughtBook.addEntries(noBookBought.entries);
-
-      final noBookFinished = <String, dynamic>{'title': 'Nope, nothing is finished yet', 'author': 'no one', 'dateFinished':'non-existent date', 'isbn':'-1'};
-      latestFinishedBook.addEntries(noBookFinished.entries);
+      latestBoughtBook ??= Book(
+        title: 'Nope, no new book in collection',
+        author: 'no one',
+        status: '0',
+        datePurchase: 'non-existent date',
+        isbn: '-1',
+      );
+      latestFinishedBook ??= Book(
+        title: 'Nope, nothing is finished yet',
+        author: 'no one',
+        status: '2',
+        dateFinished: 'non-existent date',
+        isbn: '-1',
+      );
+    } else {
+      latestBoughtBook = Book(
+        title: 'Nope, no new book in collection',
+        author: 'no one',
+        status: '0',
+        datePurchase: 'non-existent date',
+        isbn: '-1',
+      );
+      latestFinishedBook = Book(
+        title: 'Nope, nothing is finished yet',
+        author: 'no one',
+        status: '2',
+        dateFinished: 'non-existent date',
+        isbn: '-1',
+      );
     }
     // ---------------- (0.1) latest book bought and finished [end] ----------------
 
     // --------------- (1) get longest time to finish [start] ---------------
-    // get all books with date purchase, date finished
     final dataWithDatePurchasedAndFinished = await SQLHelper.getBooksWithDatePurchaseAndFinished();
-    // logger.i(dataWithDatePurchasedAndFinished);
 
-    // compare all duration, get longest
     if (dataWithDatePurchasedAndFinished.isNotEmpty) {
       longestDurationBook = dataWithDatePurchasedAndFinished.first;
 
       if (dataWithDatePurchasedAndFinished.length == 1) {
-        // only 1 book available
-        longestDurationDays = daysBetween(DateTime.parse(longestDurationBook['datePurchase']), DateTime.parse(longestDurationBook['dateFinished']));
-      }
-      else {
-        // if there's more than 1 book to compare, get duration for first element first
-        longestDurationDays = daysBetween(DateTime.parse(longestDurationBook['datePurchase']), DateTime.parse(longestDurationBook['dateFinished']));
-        // logger.i('to finish: ${longestDurationBook['title']}, $longestDurationDays days.');
+        if (longestDurationBook?.datePurchase != null &&
+            longestDurationBook!.datePurchase!.isNotEmpty &&
+            longestDurationBook?.dateFinished != null &&
+            longestDurationBook!.dateFinished!.isNotEmpty) {
+          longestDurationDays = daysBetween(
+            DateTime.parse(longestDurationBook!.datePurchase!),
+            DateTime.parse(longestDurationBook!.dateFinished!),
+          );
+        }
+      } else {
+        longestDurationDays = 0;
+        if (longestDurationBook?.datePurchase != null &&
+            longestDurationBook!.datePurchase!.isNotEmpty &&
+            longestDurationBook?.dateFinished != null &&
+            longestDurationBook!.dateFinished!.isNotEmpty) {
+          longestDurationDays = daysBetween(
+            DateTime.parse(longestDurationBook!.datePurchase!),
+            DateTime.parse(longestDurationBook!.dateFinished!),
+          );
+        }
 
-        // then go through the whole list 
         for (var i = 1; i < dataWithDatePurchasedAndFinished.length; i++) {
-          Map<String, dynamic> nowChecking = dataWithDatePurchasedAndFinished.elementAt(i);
-          int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.parse(nowChecking['dateFinished']));
-          // logger.i('${nowChecking['title']}, $nowCheckingDuration days.');
+          final nowChecking = dataWithDatePurchasedAndFinished.elementAt(i);
+          if (nowChecking.datePurchase == null || nowChecking.datePurchase!.isEmpty || nowChecking.dateFinished == null || nowChecking.dateFinished!.isEmpty) {
+            continue;
+          }
+
+          final nowCheckingDuration = daysBetween(
+            DateTime.parse(nowChecking.datePurchase!),
+            DateTime.parse(nowChecking.dateFinished!),
+          );
 
           if (nowCheckingDuration > longestDurationDays) {
             longestDurationDays = nowCheckingDuration;
@@ -131,35 +158,53 @@ class _StatsScreenState extends State<StatsScreen> {
           }
         }
       }
+    } else {
+      longestDurationBook = Book(
+        title: 'Nope, nothing is finished yet',
+        author: 'no one',
+        status: '2',
+      );
     }
-    else {
-      // no finished book yet
-      final noBook = <String, dynamic>{'title': 'Nope, nothing is finished yet', 'author': 'no one'};
-      longestDurationBook.addEntries(noBook.entries);
-    }
-        
+
     logger.i('longest duration book = $longestDurationBook, taking $longestDurationDays days to finish!');
     // ---------------- (1) get longest time to finish [end] ----------------
 
     // --------------- (2) get shortest time to finish [start] ---------------
-    // use db result from (1)
     if (dataWithDatePurchasedAndFinished.isNotEmpty) {
       shortestDurationBook = dataWithDatePurchasedAndFinished.first;
 
       if (dataWithDatePurchasedAndFinished.length == 1) {
-        // only 1 book available
-        shortestDurationDays = daysBetween(DateTime.parse(shortestDurationBook['datePurchase']), DateTime.parse(shortestDurationBook['dateFinished']));
-      }
-      else {
-        // if there's more than 1 book to compare, get duration for first element first
-        shortestDurationDays = daysBetween(DateTime.parse(shortestDurationBook['datePurchase']), DateTime.parse(shortestDurationBook['dateFinished']));
-        // logger.i('to finish: ${shortestDurationBook['title']}, $shortestDurationBook days.');
+        if (shortestDurationBook?.datePurchase != null &&
+            shortestDurationBook!.datePurchase!.isNotEmpty &&
+            shortestDurationBook?.dateFinished != null &&
+            shortestDurationBook!.dateFinished!.isNotEmpty) {
+          shortestDurationDays = daysBetween(
+            DateTime.parse(shortestDurationBook!.datePurchase!),
+            DateTime.parse(shortestDurationBook!.dateFinished!),
+          );
+        }
+      } else {
+        shortestDurationDays = 0;
+        if (shortestDurationBook?.datePurchase != null &&
+            shortestDurationBook!.datePurchase!.isNotEmpty &&
+            shortestDurationBook?.dateFinished != null &&
+            shortestDurationBook!.dateFinished!.isNotEmpty) {
+          shortestDurationDays = daysBetween(
+            DateTime.parse(shortestDurationBook!.datePurchase!),
+            DateTime.parse(shortestDurationBook!.dateFinished!),
+          );
+        }
 
-        // then go through the whole list 
         for (var i = 1; i < dataWithDatePurchasedAndFinished.length; i++) {
-          Map<String, dynamic> nowChecking = dataWithDatePurchasedAndFinished.elementAt(i);
-          int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.parse(nowChecking['dateFinished']));
-          // logger.i('${nowChecking['title']}, $nowCheckingDuration days.');
+          final nowChecking = dataWithDatePurchasedAndFinished.elementAt(i);
+          if (nowChecking.datePurchase == null || nowChecking.datePurchase!.isEmpty || nowChecking.dateFinished == null || nowChecking.dateFinished!.isEmpty) {
+            continue;
+          }
+
+          final nowCheckingDuration = daysBetween(
+            DateTime.parse(nowChecking.datePurchase!),
+            DateTime.parse(nowChecking.dateFinished!),
+          );
 
           if (nowCheckingDuration < shortestDurationDays) {
             shortestDurationDays = nowCheckingDuration;
@@ -167,36 +212,40 @@ class _StatsScreenState extends State<StatsScreen> {
           }
         }
       }
+    } else {
+      shortestDurationBook = Book(
+        title: 'Nope, nothing is finished yet',
+        author: 'no one',
+        status: '2',
+      );
     }
-    else {
-      // no finished book yet
-      final noBook = <String, dynamic>{'title': 'Nope, nothing is finished yet', 'author': 'no one'};
-      shortestDurationBook.addEntries(noBook.entries);
-    }
-    
+
     logger.i('shortest duration book = $shortestDurationBook, taking just $shortestDurationDays days to finish!');
     // ---------------- (2) get shortest time to finish [end] ----------------
 
     // --------------- (3) get longest time to start reading [start] ---------------
     final dataNewBooksWithDatePurchase = await SQLHelper.getBooksWithDatePurchaseAndStatus(0);
-    
+
     if (dataNewBooksWithDatePurchase.isNotEmpty) {
       longestDurationNewBook = dataNewBooksWithDatePurchase.first;
-      
-      if (dataNewBooksWithDatePurchase.length == 1) {
-        // only one book
-        longestDurationNewDays = daysBetween(DateTime.parse(longestDurationNewBook['datePurchase']), DateTime.now());
-      }
-      else {
-        // if there's more than 1 book to compare, get duration for first element first
-        longestDurationNewDays = daysBetween(DateTime.parse(longestDurationNewBook['datePurchase']), DateTime.now());
-        // logger.i('new book: ${longestDurationNewBook['title']}, already $longestDurationNewBook days.');
 
-        // then go through the whole list 
+      if (dataNewBooksWithDatePurchase.length == 1) {
+        if (longestDurationNewBook?.datePurchase != null && longestDurationNewBook!.datePurchase!.isNotEmpty) {
+          longestDurationNewDays = daysBetween(DateTime.parse(longestDurationNewBook!.datePurchase!), DateTime.now());
+        }
+      } else {
+        longestDurationNewDays = 0;
+        if (longestDurationNewBook?.datePurchase != null && longestDurationNewBook!.datePurchase!.isNotEmpty) {
+          longestDurationNewDays = daysBetween(DateTime.parse(longestDurationNewBook!.datePurchase!), DateTime.now());
+        }
+
         for (var i = 1; i < dataNewBooksWithDatePurchase.length; i++) {
-          Map<String, dynamic> nowChecking = dataNewBooksWithDatePurchase.elementAt(i);
-          int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.now());
-          // logger.i('${nowChecking['title']}, already $nowCheckingDuration days.');
+          final nowChecking = dataNewBooksWithDatePurchase.elementAt(i);
+          if (nowChecking.datePurchase == null || nowChecking.datePurchase!.isEmpty) {
+            continue;
+          }
+
+          final nowCheckingDuration = daysBetween(DateTime.parse(nowChecking.datePurchase!), DateTime.now());
 
           if (nowCheckingDuration > longestDurationNewDays) {
             longestDurationNewDays = nowCheckingDuration;
@@ -204,11 +253,12 @@ class _StatsScreenState extends State<StatsScreen> {
           }
         }
       }
-    }
-    else {
-      // no new book yet
-      final noBook = <String, dynamic>{'title': 'No, no new book currently', 'author': 'no one'};
-      longestDurationNewBook.addEntries(noBook.entries);      
+    } else {
+      longestDurationNewBook = Book(
+        title: 'No, no new book currently',
+        author: 'no one',
+        status: '0',
+      );
     }
     // ---------------- (3) get longest time to start reading [end] ----------------
 
@@ -219,19 +269,22 @@ class _StatsScreenState extends State<StatsScreen> {
       longestNowReadingBook = dataReadingWithDatePurchased.first;
 
       if (dataReadingWithDatePurchased.length == 1) {
-        // only one book
-        longestNowReadingDays = daysBetween(DateTime.parse(longestNowReadingBook['datePurchase']), DateTime.now());
-      }
-      else {
-        // if there's more than 1 book to compare, get duration for first element first
-        longestNowReadingDays = daysBetween(DateTime.parse(longestNowReadingBook['datePurchase']), DateTime.now());
-        // logger.i('now reading book: ${longestNowReadingBook['title']}, already $longestNowReadingBook days from purchased date.');
+        if (longestNowReadingBook?.datePurchase != null && longestNowReadingBook!.datePurchase!.isNotEmpty) {
+          longestNowReadingDays = daysBetween(DateTime.parse(longestNowReadingBook!.datePurchase!), DateTime.now());
+        }
+      } else {
+        longestNowReadingDays = 0;
+        if (longestNowReadingBook?.datePurchase != null && longestNowReadingBook!.datePurchase!.isNotEmpty) {
+          longestNowReadingDays = daysBetween(DateTime.parse(longestNowReadingBook!.datePurchase!), DateTime.now());
+        }
 
-        // then go through the whole list 
         for (var i = 1; i < dataReadingWithDatePurchased.length; i++) {
-          Map<String, dynamic> nowChecking = dataReadingWithDatePurchased.elementAt(i);
-          int nowCheckingDuration = daysBetween(DateTime.parse(nowChecking['datePurchase']), DateTime.now());
-          // logger.i('${nowChecking['title']}, already $nowCheckingDuration days from purchased date.');
+          final nowChecking = dataReadingWithDatePurchased.elementAt(i);
+          if (nowChecking.datePurchase == null || nowChecking.datePurchase!.isEmpty) {
+            continue;
+          }
+
+          final nowCheckingDuration = daysBetween(DateTime.parse(nowChecking.datePurchase!), DateTime.now());
 
           if (nowCheckingDuration > longestNowReadingDays) {
             longestNowReadingDays = nowCheckingDuration;
@@ -239,15 +292,16 @@ class _StatsScreenState extends State<StatsScreen> {
           }
         }
       }
-    }
-    else {
-      // no now reading book (marked with isbn -1)
-      final noBook = <String, dynamic>{'title': 'Hmm, you have no now reading books', 'author': 'not reading anything currently', 'isbn':'-1'};
-      longestNowReadingBook.addEntries(noBook.entries);      
+    } else {
+      longestNowReadingBook = Book(
+        title: 'Hmm, you have no now reading books',
+        author: 'not reading anything currently',
+        status: '1',
+        isbn: '-1',
+      );
     }
     // ------------------ (4) now reading with longest time [end] ------------------
 
-    // setState to refresh all
     setState(() {});
   }
 
@@ -311,11 +365,11 @@ class _StatsScreenState extends State<StatsScreen> {
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${latestBoughtBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestBoughtBook?.displayTitle ?? 'Nope, no new book in collection'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${latestBoughtBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestBoughtBook?.displayAuthor ?? 'no one'}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: 'was purchased on '),
-                      TextSpan(text: '${latestBoughtBook['datePurchase']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestBoughtBook?.datePurchase ?? 'non-existent date'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ',\n'),
                       TextSpan(text: '$latestBoughtDays\n', style: const TextStyle(fontSize: 35),),
                       const TextSpan(text: 'days ago.'),
@@ -337,11 +391,11 @@ class _StatsScreenState extends State<StatsScreen> {
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${latestFinishedBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestFinishedBook?.displayTitle ?? 'Nope, nothing is finished yet'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${latestFinishedBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestFinishedBook?.displayAuthor ?? 'no one'}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: 'was done read on '),
-                      TextSpan(text: '${latestFinishedBook['dateFinished']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${latestFinishedBook?.dateFinished ?? 'non-existent date'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ',\n'),
                       TextSpan(text: '$latestFinishedDays\n', style: const TextStyle(fontSize: 35),),
                       const TextSpan(text: 'days ago.'),
@@ -363,9 +417,9 @@ class _StatsScreenState extends State<StatsScreen> {
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${longestDurationNewBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${longestDurationNewBook?.displayTitle ?? 'No, no new book currently'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${longestDurationNewBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${longestDurationNewBook?.displayAuthor ?? 'no one'}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: 'now already\n'),
                       TextSpan(text: '$longestDurationNewDays\n', style: const TextStyle(fontSize: 35),),
                       const TextSpan(text: 'days and still never been touched in the bookshelf there.'),
@@ -387,13 +441,13 @@ class _StatsScreenState extends State<StatsScreen> {
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${longestNowReadingBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${longestNowReadingBook?.displayTitle ?? 'Hmm, you have no now reading books'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${longestNowReadingBook['author']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${longestNowReadingBook?.displayAuthor ?? 'not reading anything currently'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                     ],
                   ),
                 ),
-                (longestNowReadingBook['isbn'] != '-1') 
+                (longestNowReadingBook?.isbn != '-1') 
                   ? Text.rich(
                       textAlign: TextAlign.center,
                       TextSpan(
@@ -430,9 +484,9 @@ class _StatsScreenState extends State<StatsScreen> {
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${longestDurationBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${longestDurationBook?.displayTitle ?? 'Nope, nothing is finished yet'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${longestDurationBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${longestDurationBook?.displayAuthor ?? 'no one'}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: 'totalling\n'),
                       TextSpan(text: '$longestDurationDays\n', style: const TextStyle(fontSize: 35),),
                       const TextSpan(text: 'days to finish.'),
@@ -454,9 +508,9 @@ class _StatsScreenState extends State<StatsScreen> {
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      TextSpan(text: '${shortestDurationBook['title']}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${shortestDurationBook?.displayTitle ?? 'Nope, nothing is finished yet'}', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: ' by '),
-                      TextSpan(text: '${shortestDurationBook['author']}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
+                      TextSpan(text: '${shortestDurationBook?.displayAuthor ?? 'no one'}\n', style: const TextStyle(fontWeight: FontWeight.bold),),
                       const TextSpan(text: 'taking just\n'),
                       TextSpan(text: '$shortestDurationDays\n', style: const TextStyle(fontSize: 35),),
                       const TextSpan(text: 'days to finish.'),

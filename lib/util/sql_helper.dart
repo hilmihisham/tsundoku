@@ -260,36 +260,36 @@ class SQLHelper {
   // -------------- getter for StatsScreen ------------------
 
   /// get all books with date purchase, date finished
-  static Future<List<Map<String, dynamic>>>
-      getBooksWithDatePurchaseAndFinished() async {
+  static Future<List<Book>> getBooksWithDatePurchaseAndFinished() async {
     final db = await SQLHelper.db();
-    return db.rawQuery("""
+    final rows = await db.rawQuery("""
       SELECT * FROM books 
       WHERE status = '2'
         AND (datePurchase IS NOT NULL AND datePurchase != '')
         AND (dateFinished IS NOT NULL AND dateFinished != '')
       ORDER BY id
     """);
+    return rows.map(Book.fromMap).toList();
   }
 
   /// get longest time to start reading (status 0)
   /// now reading with longest time (status 1)
-  static Future<List<Map<String, dynamic>>> getBooksWithDatePurchaseAndStatus(
-      int status) async {
+  static Future<List<Book>> getBooksWithDatePurchaseAndStatus(int status) async {
     final db = await SQLHelper.db();
-    return db.rawQuery("""
+    final rows = await db.rawQuery("""
       SELECT * FROM books 
       WHERE status = '$status'
         AND (datePurchase IS NOT NULL AND datePurchase != '')
       ORDER BY id
     """);
+    return rows.map(Book.fromMap).toList();
   }
 
   /// get latest book in each category
   /// (since query is union, so we need to use subquery (coz got ORDER BY) to eliminate error wrong clause order)
-  static Future<List<Map<String, dynamic>>> getLatestBooksInEachStatus() async {
+  static Future<List<Book>> getLatestBooksInEachStatus() async {
     final db = await SQLHelper.db();
-    return db.rawQuery("""
+    final rows = await db.rawQuery("""
       SELECT * 
       FROM (
             SELECT * FROM books 
@@ -310,15 +310,20 @@ class SQLHelper {
             LIMIT 1
       )
     """);
+    return rows.map(Book.fromMap).toList();
   }
 
   // -------------- getter for SearchScreen ------------------
 
   /// get all books that contains the searched title
-  static Future<List<Map<String, dynamic>>> getBooksByTitleSearch(
-      String title) async {
+  static Future<List<Book>> getBooksByTitleSearch(String title) async {
     final db = await SQLHelper.db();
-    return db.rawQuery(
-        "SELECT * FROM books WHERE title LIKE '%$title%' ORDER BY title DESC");
+    final rows = await db.query(
+      'books',
+      where: 'title LIKE ?',
+      whereArgs: ['%$title%'],
+      orderBy: 'title DESC',
+    );
+    return rows.map(Book.fromMap).toList();
   }
 }

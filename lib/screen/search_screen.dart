@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:tsundoku/util/book.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -17,7 +18,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _validateEmptySearch = false; // set to false when search field is empty
 
   // all books
-  List<Map<String, dynamic>> _books = [];
+  List<Book> _books = [];
 
   final TextEditingController _searchTextController = TextEditingController();
 
@@ -37,22 +38,17 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  Color bookListColor(String status) {
-    Color result = Colors.grey;
-
-    switch (status) {
-      case "0":
-        result = Colors.red.shade400;
-        break;
-      case "1":
-        result = Colors.amber;
-        break;
-      case "2":
-        result = Colors.green.shade400;
-        break;
+  Color bookListColor(Book book) {
+    if (book.isNew) {
+      return Colors.red.shade400;
     }
-
-    return result;
+    if (book.isReading) {
+      return Colors.amber;
+    }
+    if (book.isFinished) {
+      return Colors.green.shade400;
+    }
+    return Colors.grey;
   }
 
   @override
@@ -193,15 +189,17 @@ class _SearchScreenState extends State<SearchScreen> {
                           );
                         } else {
                           // all the other Card for found books
+                          final book = _books[index];
+
                           return Card(
-                            color: bookListColor(_books[index]['status']),
+                            color: bookListColor(book),
                             margin: const EdgeInsets.all(8.0),
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 vertical: 8.0,
                                 horizontal: 15.0,
                               ),
-                              title: Text(_books[index]['title']),
+                              title: Text(book.displayTitle),
                               titleTextStyle: const TextStyle(
                                 fontWeight: FontWeight.w400,
                                 fontSize: 19,
@@ -216,13 +214,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                       size: 18.0,
                                     )),
                                     TextSpan(
-                                        text: ' ${_books[index]['author']}\n'),
+                                        text: ' ${book.displayAuthor}\n'),
                                   ],
                                 ),
                               ),
                               onTap: () {
                                 logger.i(
-                                    'tapped: ${_books[index]['title']}, index = $index');
+                                    'tapped: ${book.displayTitle}, index = $index');
                               },
                             ),
                           );
