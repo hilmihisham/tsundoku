@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:books_finder/books_finder.dart';
+import 'package:books_finder/books_finder.dart' as books_finder;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tsundoku/util/book.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
 import 'barcode_scanner_view.dart';
@@ -13,13 +14,13 @@ import 'barcode_scanner_view.dart';
 class AddBookScreen extends StatefulWidget {
   /// [id] value is required. If creating a new book entry, pass in the value as -1.
   /// 
-  /// [book] value is required. As of current, [book] object is of type Map<String, dynamic>.
+  /// [book] value is required. If creating a new book entry, pass in the value as null.
   /// 
   /// On popping the screen from the navigator, return true to indicate there's an entry being inserted/updated.
-  const AddBookScreen({Key? key, required this.id, required this.book}) : super(key: key);
+  const AddBookScreen({super.key, required this.id, required this.book});
 
   final int id;
-  final Map<String, dynamic>? book;
+  final Book? book;
 
   @override
   State<AddBookScreen> createState() => _AddBookScreen();
@@ -38,7 +39,7 @@ class _AddBookScreen extends State<AddBookScreen> {
   int _bookStatus = 0;
 
   // int? bookId;
-  late Map<String, dynamic> existingBook;
+  // late Book existingBook;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
@@ -224,23 +225,46 @@ class _AddBookScreen extends State<AddBookScreen> {
 
     logger.d('AddBookScreen building, id = ${widget.id}, _isDoneGetDataFromHomeScreen = $_isDoneGetDataFromHomeScreen');
 
+    final bookToEdit = widget.book;
+    
     // if we editing the existing book (id != -1), fill in the text controller
     if (widget.id != -1 && _isDoneGetDataFromHomeScreen == false) {
-      existingBook = widget.book!;
-      logger.i('existing book data = $existingBook');
 
-      if (existingBook['isbn'] != null) _isbn13Controller.text = existingBook['isbn'];
-      _titleController.text = existingBook['title'];
-      _authorController.text = existingBook['author'];
-      _bookStatus = int.parse(existingBook['status']);
-      _datePurchaseController.text = existingBook['datePurchase'];
-      (existingBook['dateFinished'] == null) ? _dateReadDoneController.text = '' : _dateReadDoneController.text = existingBook['dateFinished'];
-      if (existingBook['publisher'] != null) _publisherController.text = existingBook['publisher'];
+      // guard against null bookToEdit, which should not happen, but just in case
+      if (bookToEdit == null) {
+        logger.e('Unexpected Error: bookToEdit is null for id = ${widget.id}');
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_sharp,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('tsundoku'),
+          ),
+          body: const Center(
+            child: Text('Unexpected Error: Book data not found. Please go back and try again.'),
+          ),
+        );
+      }
+      else {
+        logger.i('existing book data = ${bookToEdit.toString()}');
 
-      _isForgotDateDone = false;
-      
-      // flip the flag so that we won't refresh all above when screen rebuild mid-edit
-      _isDoneGetDataFromHomeScreen = true;
+        // fill in the text controller with existing book data
+        if (bookToEdit.isbn != null) _isbn13Controller.text = bookToEdit.isbn!;
+        _titleController.text = bookToEdit.title;
+        _authorController.text = bookToEdit.author ?? '';
+        _bookStatus = int.parse(bookToEdit.status);
+        _datePurchaseController.text = bookToEdit.datePurchase ?? '';
+        (bookToEdit.dateFinished == null) ? _dateReadDoneController.text = '' : _dateReadDoneController.text = bookToEdit.dateFinished ?? '';
+        if (bookToEdit.publisher != null) _publisherController.text = bookToEdit.publisher ?? '';
+
+        _isForgotDateDone = false;
+        
+        // flip the flag so that we won't refresh all above when screen rebuild mid-edit
+        _isDoneGetDataFromHomeScreen = true;
+      }
     }
 
     return Scaffold(
@@ -327,20 +351,20 @@ class _AddBookScreen extends State<AddBookScreen> {
                         final prefs = await SharedPreferences.getInstance();
                         final savedApiKey = prefs.getString('google_books_api_key')?.trim() ?? '';
 
-                        final List<Book> bookSearch = savedApiKey.isEmpty
-                            ? await queryBooks(
+                        final List<books_finder.Book> bookSearch = savedApiKey.isEmpty
+                            ? await books_finder.queryBooks(
                                 _isbn13Controller.text,
-                                queryType: QueryType.isbn,
+                                queryType: books_finder.QueryType.isbn,
                                 maxResults: 1,
-                                printType: PrintType.books,
-                                orderBy: OrderBy.relevance,
+                                printType: books_finder.PrintType.books,
+                                orderBy: books_finder.OrderBy.relevance,
                               )
-                            : await queryBooks(
+                            : await books_finder.queryBooks(
                                 _isbn13Controller.text,
-                                queryType: QueryType.isbn,
+                                queryType: books_finder.QueryType.isbn,
                                 maxResults: 1,
-                                printType: PrintType.books,
-                                orderBy: OrderBy.relevance,
+                                printType: books_finder.PrintType.books,
+                                orderBy: books_finder.OrderBy.relevance,
                                 apiKey: savedApiKey,
                               );
                         // for (Book bookResult in bookSearch) {
@@ -375,7 +399,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                         else {
                           var searchResultConfirm = 'No';
                           
-                          Book bookResult = bookSearch.first;
+                          books_finder.Book bookResult = bookSearch.first;
 
                           String fullTitle = bookResult.info.title;
                           if(bookResult.info.subtitle.isNotEmpty) fullTitle = '$fullTitle: ${bookResult.info.subtitle}';
@@ -687,14 +711,6 @@ class _AddBookScreen extends State<AddBookScreen> {
                         await _updateItem(widget.id);
                       }
 
-                      // clear text fields (relics from having this screen as bottom sheet)
-                      // _isbn13Controller.text = '';
-                      // _titleController.text = '';
-                      // _authorController.text = '';
-                      // _datePurchaseController.text = '';
-                      // _dateReadDoneController.text = '';
-                      // _isForgotDateDone = false;
-
                       if (mounted) {
                         // give update to user
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -724,29 +740,33 @@ class _AddBookScreen extends State<AddBookScreen> {
   
   /// insert new book to db
   Future<void> _addItem() async {
-    await SQLHelper.inputBook(
-      _titleController.text, 
-      _authorController.text, 
-      _bookStatus.toString(), 
-      _datePurchaseController.text, 
-      _dateReadDoneController.text,
-      _isbn13Controller.text,
-      _publisherController.text
+    final newBook = Book(
+      title: _titleController.text,
+      author: _authorController.text,
+      status: _bookStatus.toString(),
+      datePurchase: _datePurchaseController.text,
+      dateFinished: _dateReadDoneController.text,
+      isbn: _isbn13Controller.text,
+      publisher: _publisherController.text,
     );
+
+    await SQLHelper.inputBook(newBook);
   }
 
   /// update existing book
   Future<void> _updateItem(int id) async {
-    await SQLHelper.updateBook(
-      id, 
-      _titleController.text, 
-      _authorController.text, 
-      _bookStatus.toString(), 
-      _datePurchaseController.text, 
-      _dateReadDoneController.text,
-      _isbn13Controller.text,
-      _publisherController.text
+    final updatedBook = Book(
+      id: id,
+      title: _titleController.text,
+      author: _authorController.text,
+      status: _bookStatus.toString(),
+      datePurchase: _datePurchaseController.text,
+      dateFinished: _dateReadDoneController.text,
+      isbn: _isbn13Controller.text,
+      publisher: _publisherController.text,
     );
+
+    await SQLHelper.updateBook(updatedBook);
   }
 
 }

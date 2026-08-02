@@ -10,6 +10,7 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tsundoku/screen/addbook_screen.dart';
 import 'package:tsundoku/screen/settings_screen.dart';
+import 'package:tsundoku/util/book.dart';
 import 'package:tsundoku/util/constants.dart';
 import 'package:tsundoku/util/sql_helper.dart';
 
@@ -26,16 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // logger
   final logger = Logger();
 
-  // to control showing floating action button
-  // bool _showFab = true;
-
   // all books
-  List<Map<String, dynamic>> _books = [];
-
-  // books separate by status
-  // List<Map<String, dynamic>> _booksNew = [];
-  // List<Map<String, dynamic>> _booksReading = [];
-  // List<Map<String, dynamic>> _booksFinished = [];
+  List<Book> _books = [];
 
   bool _isLoading = true; // bool for checking loading book list
 
@@ -84,12 +77,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _handleEditBook(Map<String, dynamic> book) async {
+  Future<void> _handleEditBook(Book book) async {
     if (!mounted) return;
 
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => AddBookScreen(id: book['id'], book: book),
+        builder: (context) => AddBookScreen(id: book.id!, book: book),
       ),
     );
 
@@ -118,18 +111,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     for (var i = 0; i < sortedBooksList.length; i++) {
       final oneBookData = <String>[
-        sortedBooksList[i]['id'].toString(),
-        '${sortedBooksList[i]['title']}',
-        '${sortedBooksList[i]['author']}',
-        '${sortedBooksList[i]['status']}',
-        '${sortedBooksList[i]['datePurchase']}',
-        '${sortedBooksList[i]['dateFinished']}',
+        sortedBooksList[i].id.toString(),
+        (sortedBooksList[i].title),
+        '${sortedBooksList[i].author}',
+        (sortedBooksList[i].status),
+        '${sortedBooksList[i].datePurchase}',
+        '${sortedBooksList[i].dateFinished}',
       ];
 
       oneBookData.add(
-          sortedBooksList[i]['isbn']?.toString() ?? '');
+          sortedBooksList[i].isbn?.toString() ?? '');
       oneBookData.add(
-          sortedBooksList[i]['publisher']?.toString() ?? '');
+          sortedBooksList[i].publisher?.toString() ?? '');
 
       booksList.add(oneBookData);
     }
@@ -333,13 +326,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final book = _books[index];
         return _BookListItem(
           book: book,
-          bookColor: bookListColor(book['status'].toString()),
+          bookColor: bookListColor(book),
           onTap: () {
-            logger.i('tapped: ${book['title']}');
-            _showBookDetails(context, book['id']);
+            logger.i('tapped: ${book.title}');
+            _showBookDetails(context, book.id!);
           },
           onEdit: () => _handleEditBook(book),
-          onDelete: () => _deleteItem(book['id'], book['title']),
+          onDelete: () => _deleteItem(book.id!, book.title),
         );
       },
     );
@@ -474,10 +467,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _refreshBooks();
   }
 
-  Color bookListColor(String status) {
+  Color bookListColor(Book book) {
     Color result = Colors.grey;
 
-    switch (status) {
+    switch (book.status) {
       case "0":
         result = Colors.red.shade400;
         break;
@@ -514,15 +507,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showBookDetails(BuildContext ctx, int id) async {
     logger.i('_showBookDetails tapped for book id $id');
 
-    final selectedBook = _books.firstWhere((element) => element['id'] == id);
+    final selectedBook = _books.firstWhere((element) => element.id == id);
     logger.i('selected book = $selectedBook');
 
     showDialog(
         context: ctx,
         builder: (_) {
           return SimpleDialog(
-            title: Text("${selectedBook['title']}"),
-            surfaceTintColor: bookListColor(selectedBook['status']),
+            title: Text(selectedBook.title),
+            surfaceTintColor: bookListColor(selectedBook),
             children: [
               Container(
                 padding: const EdgeInsets.only(
@@ -534,11 +527,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Title: ${selectedBook['title']}"),
-                    Text("Author: ${selectedBook['author']}"),
-                    Text("Publisher: ${selectedBook['publisher']}"),
+                    Text("Title: ${selectedBook.title}"),
+                    Text("Author: ${selectedBook.author}"),
+                    Text("Publisher: ${selectedBook.publisher}"),
                     const Divider(),
-                    Text("Date of Purchase: ${selectedBook['datePurchase']}"),
+                    Text("Date of Purchase: ${selectedBook.datePurchase}"),
                   ],
                 ),
               ),
@@ -584,7 +577,7 @@ class _BookListItem extends StatelessWidget {
     required this.onDelete,
   });
 
-  final Map<String, dynamic> book;
+  final Book book;
   final Color bookColor;
   final VoidCallback onTap;
   final VoidCallback onEdit;
@@ -592,8 +585,8 @@ class _BookListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isFinished = book['status'] == '2';
-    final purchaseText = ' ${book['datePurchase']}${isFinished ? ' \n' : ''}';
+    final isFinished = book.isFinished;
+    final purchaseText = ' ${book.datePurchase}${isFinished ? ' \n' : ''}';
 
     return Card(
       color: bookColor,
@@ -603,7 +596,7 @@ class _BookListItem extends StatelessWidget {
           vertical: 8.0,
           horizontal: 15.0,
         ),
-        title: Text(book['title']),
+        title: Text(book.title),
         titleTextStyle: const TextStyle(
           fontWeight: FontWeight.w400,
           fontSize: 19,
@@ -618,14 +611,14 @@ class _BookListItem extends StatelessWidget {
                   size: 18.0,
                 ),
               ),
-              TextSpan(text: ' ${book['author']}\n'),
+              TextSpan(text: ' ${book.author}\n'),
               const WidgetSpan(
                 child: Icon(
                   Icons.storefront_sharp,
                   size: 18.0,
                 ),
               ),
-              TextSpan(text: ' ${book['publisher']}\n'),
+              TextSpan(text: ' ${book.publisher}\n'),
               const WidgetSpan(
                 child: Icon(
                   Icons.shopping_cart_sharp,
@@ -640,7 +633,7 @@ class _BookListItem extends StatelessWidget {
                     size: 18.0,
                   ),
                 ),
-                TextSpan(text: ' ${book['dateFinished']}'),
+                TextSpan(text: ' ${book.dateFinished}'),
               ],
             ],
           ),
