@@ -57,4 +57,8 @@ class Book {
   String get displayTitle => title.isNotEmpty ? title : 'Untitled';
 
   String get displayAuthor => author ?? 'Unknown Author';
+
+  String toDebugString() {
+    return 'Book(id: $id, title: $title, author: $author, status: $status, dateCreated: $dateCreated)';
+  }
 }

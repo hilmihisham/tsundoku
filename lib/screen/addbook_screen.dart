@@ -243,13 +243,19 @@ class _AddBookScreen extends State<AddBookScreen> {
             ),
             title: const Text('tsundoku'),
           ),
-          body: const Center(
-            child: Text('Unexpected Error: Book data not found. Please go back and try again.'),
+          body: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Center(
+              child: Text(
+                'Unexpected Error: Book data not found. Please go back and try again.',
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         );
       }
       else {
-        logger.i('existing book data = ${bookToEdit.toString()}');
+        logger.i('existing book data = ${bookToEdit.toDebugString()}');
 
         // fill in the text controller with existing book data
         if (bookToEdit.isbn != null) _isbn13Controller.text = bookToEdit.isbn!;
@@ -708,7 +714,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                         await _addItem();
                       }
                       if (widget.id != -1) {
-                        await _updateItem(widget.id);
+                        await _updateItem(widget.id, widget.book!);
                       }
 
                       if (mounted) {
@@ -754,9 +760,9 @@ class _AddBookScreen extends State<AddBookScreen> {
   }
 
   /// update existing book
-  Future<void> _updateItem(int id) async {
+  Future<void> _updateItem(int bookId, Book book) async {
     final updatedBook = Book(
-      id: id,
+      id: bookId,
       title: _titleController.text,
       author: _authorController.text,
       status: _bookStatus.toString(),
@@ -764,6 +770,7 @@ class _AddBookScreen extends State<AddBookScreen> {
       dateFinished: _dateReadDoneController.text,
       isbn: _isbn13Controller.text,
       publisher: _publisherController.text,
+      dateCreated: book.dateCreated, // keep the original dateCreated value
     );
 
     await SQLHelper.updateBook(updatedBook);

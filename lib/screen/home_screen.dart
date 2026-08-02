@@ -508,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
     logger.i('_showBookDetails tapped for book id $id');
 
     final selectedBook = _books.firstWhere((element) => element.id == id);
-    logger.i('selected book = $selectedBook');
+    logger.i('selected book = ${selectedBook.title}');
 
     showDialog(
         context: ctx,
