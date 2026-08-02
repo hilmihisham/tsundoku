@@ -317,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   leading: const Icon(Icons.info_outline_rounded),
                   title: const Text('App version'),
-                  value: const Text('0.8.0'),
+                  value: const Text('0.8.1'),
                 ),
               ]
             ),

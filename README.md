@@ -82,6 +82,7 @@ Version | Date | Summary
 0.7.3 |  2/7/2026 | finally doing something for this app's icon and splash screen
 0.7.4 |  2/7/2026 | forgot to check splash screen on latest android version before releasing 0.7.3 =.=" so here's a very minor update to fix that
 0.8.0 |  3/7/2026 | notification is here to guilt-trip you of how many books you haven't started read yet XD.<br>backend update: change app package name<br>bug fix: backup export error on newer Android devices, csv import to restore data fails in some cases
+0.8.1 |  2/8/2026 | under-the-hood updates: creating Book class (instead of just using `Map<String, dynamic>` for all the books data).
 
 ## ..other notes
 - 31/7/2021 @ old and now-archived repo - Thanks [JideGuru](https://github.com/JideGuru) for the awesome GUI base code. Code was cool, but converting to null safety is confusing. Still, thanks for the code, that pushed me to start doing this app that I've been imagining for so long.
