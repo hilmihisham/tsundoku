@@ -57,8 +57,7 @@ class _AddBookScreen extends State<AddBookScreen> {
     super.initState();
 
     if (widget.id == -1) {
-      _datePurchaseController.text =
-          DateFormat('yyyy-MM-dd').format(DateTime.now());
+      _datePurchaseController.text = _formatDateYmd(DateTime.now());
     }
   }
 
@@ -221,10 +220,14 @@ class _AddBookScreen extends State<AddBookScreen> {
     setState(() {});
   }
 
+  String _formatDateYmd(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
+  }
+
   String _autoFilledFinishedDate() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final fallback = DateFormat('yyyy-MM-dd').format(today);
+    final fallback = _formatDateYmd(today);
 
     if (_datePurchaseController.text.isEmpty) {
       return fallback;
@@ -235,7 +238,7 @@ class _AddBookScreen extends State<AddBookScreen> {
       final purchaseDay =
           DateTime(purchaseDate.year, purchaseDate.month, purchaseDate.day);
       final effectiveDate = today.isBefore(purchaseDay) ? purchaseDay : today;
-      return DateFormat('yyyy-MM-dd').format(effectiveDate);
+      return _formatDateYmd(effectiveDate);
     } catch (_) {
       return fallback;
     }
@@ -479,8 +482,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                             ));
                           }
 
-                          if (searchResultConfirm.compareTo('No') == 0 &&
-                              mounted) {
+                          if (searchResultConfirm == 'No' && mounted) {
                             // search result is wrong
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -685,7 +687,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                   onTap: () async {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
-                      initialDate: (_datePurchaseController.text != '')
+                      initialDate: _datePurchaseController.text.isNotEmpty
                           ? DateTime.parse(_datePurchaseController.text)
                           : DateTime.now(),
                       firstDate: DateTime(1970),
@@ -694,7 +696,7 @@ class _AddBookScreen extends State<AddBookScreen> {
 
                     if (pickedDate != null) {
                       logger.i(pickedDate.toString());
-                      String formattedDate = DateFormat('yyyy-MM-dd').format(
+                      String formattedDate = _formatDateYmd(
                           pickedDate); // format date in required form here we use yyyy-MM-dd that means time is removed
                       logger.d(
                           formattedDate); //formatted date output using intl.dart package =>  2022-07-04
@@ -723,10 +725,10 @@ class _AddBookScreen extends State<AddBookScreen> {
                         onTap: () async {
                           DateTime? pickedDateDone = await showDatePicker(
                             context: context,
-                            initialDate: (_dateReadDoneController.text != '')
+                            initialDate: _dateReadDoneController.text.isNotEmpty
                                 ? DateTime.parse(_dateReadDoneController.text)
                                 : DateTime.now(),
-                            firstDate: (_datePurchaseController.text != '')
+                            firstDate: _datePurchaseController.text.isNotEmpty
                                 ? DateTime.parse(_datePurchaseController.text)
                                 : DateTime(1970),
                             lastDate: DateTime(2100),
@@ -734,9 +736,8 @@ class _AddBookScreen extends State<AddBookScreen> {
 
                           if (pickedDateDone != null) {
                             logger.i(pickedDateDone.toString());
-                            String formattedDateDone = DateFormat('yyyy-MM-dd')
-                                .format(
-                                    pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
+                            String formattedDateDone = _formatDateYmd(
+                                pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
                             logger.d(
                                 formattedDateDone); //formatted date output using intl.dart package =>  2022-07-04
 
@@ -779,7 +780,7 @@ class _AddBookScreen extends State<AddBookScreen> {
                       if (_isForgotDateDone) {
                         _dateReadDoneController.text = '';
                       } else if ((_bookStatus == 2) &&
-                          (_dateReadDoneController.text == '')) {
+                          _dateReadDoneController.text.isEmpty) {
                         // if book finished is selected, but date finished is not inputted, auto select today's date
                         _dateReadDoneController.text =
                             _autoFilledFinishedDate();
