@@ -11,6 +11,38 @@ import 'package:tsundoku/util/sql_helper.dart';
 
 import 'barcode_scanner_view.dart';
 
+String resolveReadCompletionDate({
+  required String purchaseDate,
+  String? completionDate,
+  DateTime? currentTime,
+}) {
+  final now = currentTime ?? DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+
+  if ((completionDate ?? '').trim().isNotEmpty) {
+    return completionDate!.trim();
+  }
+
+  final purchaseValue = purchaseDate.trim();
+  if (purchaseValue.isEmpty) {
+    return DateFormat('yyyy-MM-dd').format(today);
+  }
+
+  final parsedPurchase = DateTime.tryParse(purchaseValue);
+  if (parsedPurchase == null) {
+    return DateFormat('yyyy-MM-dd').format(today);
+  }
+
+  final purchaseDay = DateTime(
+    parsedPurchase.year,
+    parsedPurchase.month,
+    parsedPurchase.day,
+  );
+
+  final effectiveDate = purchaseDay.isAfter(today) ? purchaseDay : today;
+  return DateFormat('yyyy-MM-dd').format(effectiveDate);
+}
+
 class AddBookScreen extends StatefulWidget {
   /// [id] value is required. If creating a new book entry, pass in the value as -1.
   ///
@@ -135,7 +167,10 @@ class _AddBookScreen extends State<AddBookScreen> {
         _bookStatus = value;
 
         if (_bookStatus == 2 && _dateReadDoneController.text.isEmpty) {
-          _dateReadDoneController.text = _autoFilledFinishedDate();
+          _dateReadDoneController.text = resolveReadCompletionDate(
+            purchaseDate: _datePurchaseController.text,
+            completionDate: _dateReadDoneController.text,
+          );
         }
 
         // a hack style of getting the button to update its color itself
@@ -227,26 +262,6 @@ class _AddBookScreen extends State<AddBookScreen> {
 
   String _formatDateYmd(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
-  }
-
-  String _autoFilledFinishedDate() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final fallback = _formatDateYmd(today);
-
-    if (_datePurchaseController.text.isEmpty) {
-      return fallback;
-    }
-
-    try {
-      final purchaseDate = DateTime.parse(_datePurchaseController.text);
-      final purchaseDay =
-          DateTime(purchaseDate.year, purchaseDate.month, purchaseDate.day);
-      final effectiveDate = today.isBefore(purchaseDay) ? purchaseDay : today;
-      return _formatDateYmd(effectiveDate);
-    } catch (_) {
-      return fallback;
-    }
   }
 
   /// call barcode scanner
@@ -647,14 +662,27 @@ class _AddBookScreen extends State<AddBookScreen> {
   }
 
   Widget _buildPurchaseDateField() {
+    final hasPurchaseDate = _datePurchaseController.text.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: TextField(
         controller: _datePurchaseController,
-        decoration: const InputDecoration(
-          icon: Icon(Icons.calendar_today),
+        decoration: InputDecoration(
+          icon: const Icon(Icons.calendar_today),
           labelText: "Date of Purchase",
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
+          suffixIcon: hasPurchaseDate
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: 'Clear purchase date',
+                  onPressed: () {
+                    setState(() {
+                      _datePurchaseController.clear();
+                    });
+                  },
+                )
+              : null,
         ),
         readOnly: true,
         onTap: () async {
@@ -687,15 +715,28 @@ class _AddBookScreen extends State<AddBookScreen> {
 
   Widget _buildFinishedDateFieldOrPlaceholder() {
     if (_bookStatus == 2) {
+      final hasFinishedDate = _dateReadDoneController.text.isNotEmpty;
+
       // show date reading done picker if book status = finished
       return Padding(
         padding: const EdgeInsets.all(10.0),
         child: TextField(
           controller: _dateReadDoneController,
-          decoration: const InputDecoration(
-            icon: Icon(Icons.done_all_sharp),
+          decoration: InputDecoration(
+            icon: const Icon(Icons.done_all_sharp),
             labelText: "Date Reading Done!",
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
+            suffixIcon: hasFinishedDate
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    tooltip: 'Clear finished date',
+                    onPressed: () {
+                      setState(() {
+                        _dateReadDoneController.clear();
+                      });
+                    },
+                  )
+                : null,
           ),
           readOnly: true,
           onTap: () async {
@@ -765,8 +806,11 @@ class _AddBookScreen extends State<AddBookScreen> {
               _dateReadDoneController.text = '';
             } else if ((_bookStatus == 2) &&
                 _dateReadDoneController.text.isEmpty) {
-              // if book finished is selected, but date finished is not inputted, auto select today's date
-              _dateReadDoneController.text = _autoFilledFinishedDate();
+              // if book finished is selected, but date finished is not inputted, resolve using central date policy
+              _dateReadDoneController.text = resolveReadCompletionDate(
+                purchaseDate: _datePurchaseController.text,
+                completionDate: _dateReadDoneController.text,
+              );
               logger.d(
                   'date finished auto set to ${_dateReadDoneController.text}');
             }
