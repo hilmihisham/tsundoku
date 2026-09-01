@@ -34,12 +34,8 @@ class _AddBookScreen extends State<AddBookScreen> {
   bool _isDoneGetDataFromHomeScreen = false;
   bool _validateEmptyTitle = false;
   bool _validateEmptyAuthor = false;
-  // bool _validateEmptyPublisher = false;
 
   int _bookStatus = 0;
-
-  // int? bookId;
-  // late Book existingBook;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
@@ -113,8 +109,6 @@ class _AddBookScreen extends State<AddBookScreen> {
           borderRadius: BorderRadius.circular(10.0),
         ),
         side: BorderSide(
-          // width: 2.0,
-          // color: Colors.green,
           width: (_isForgotDateDone) ? 2.0 : 0.5,
           color: (_isForgotDateDone) ? Colors.green : Colors.grey,
         ),
@@ -125,7 +119,6 @@ class _AddBookScreen extends State<AddBookScreen> {
             child: Text(
               'i forgot lol',
               style: TextStyle(
-                // color: Colors.green,
                 color: (_isForgotDateDone) ? Colors.green : Colors.grey,
               ),
             ),
@@ -139,9 +132,6 @@ class _AddBookScreen extends State<AddBookScreen> {
   Widget customBookStatusButton(String buttonName, int value, Color color) {
     return OutlinedButton(
       onPressed: () {
-        // setState(() {
-        //   _bookStatus = value;
-        // });
         _bookStatus = value;
 
         if (_bookStatus == 2 && _dateReadDoneController.text.isEmpty) {
@@ -383,10 +373,6 @@ class _AddBookScreen extends State<AddBookScreen> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.qr_code_sharp),
                       onPressed: () => barcodeScan(),
-                      // onPressed: () async {
-                      //   String barcodeScanResult = await FlutterBarcodeScanner.scanBarcode("#ff6666", "Cancel", true, ScanMode.BARCODE);
-                      //   logger.i('barcode scanned: $barcodeScanResult');
-                      // },
                     ),
                   ),
                   keyboardType: TextInputType.number,
@@ -427,13 +413,6 @@ class _AddBookScreen extends State<AddBookScreen> {
                                     orderBy: books_finder.OrderBy.relevance,
                                     apiKey: savedApiKey,
                                   );
-                        // for (Book bookResult in bookSearch) {
-                        //   logger.d(
-                        //     'title: ${bookResult.info.title}, subtitle: ${bookResult.info.subtitle}, author: ${bookResult.info.authors}\n'
-                        //     'publisher: ${bookResult.info.publisher}, description: ${bookResult.info.description}'
-                        //   );
-                        // }
-
                         // popup to confirm search result is correct
                         if (bookSearch.isEmpty) {
                           // no search result found, show snack bar to notify
@@ -609,7 +588,6 @@ class _AddBookScreen extends State<AddBookScreen> {
                             onPressed: () =>
                                 _clearTextField(_publisherController),
                           ),
-                    // errorText: _validateEmptyPublisher ? "ey, if no publisher then how u get this book?" : null,
                   ),
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
@@ -737,7 +715,6 @@ class _AddBookScreen extends State<AddBookScreen> {
                     setState(() {
                       _validateEmptyTitle = _titleController.text.isEmpty;
                       _validateEmptyAuthor = _authorController.text.isEmpty;
-                      // _validateEmptyPublisher = _publisherController.text.isEmpty;
                     });
 
                     // proceed only if all required field is not empty (_validateEmptyTitle & _validateEmptyAuthor = false)
