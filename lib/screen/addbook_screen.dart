@@ -352,410 +352,445 @@ class _AddBookScreen extends State<AddBookScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // header typography
-              const Padding(
-                padding: EdgeInsets.only(top: 30.0, bottom: 20.0),
-                child: Text(
-                  "Add new book \ninto library.",
-                  style: TextStyle(
-                    fontSize: 30.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10.0, 15.0, 10.0, 10.0),
-                child: TextField(
-                  controller: _isbn13Controller,
-                  decoration: InputDecoration(
-                    labelText: 'ISBN-13 Number',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.qr_code_sharp),
-                      onPressed: () => barcodeScan(),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
-                child: ElevatedButton(
-                  child: const Text('Find Book'),
-                  onPressed: () async {
-                    logger.i('_isbnController = ${_isbn13Controller.value}');
-
-                    if (_isbn13Controller.text.isEmpty) {
-                      // no input, no do search
-                      _showSnackBar('No ISBN number entered.');
-                    } else {
-                      try {
-                        final prefs = await SharedPreferences.getInstance();
-                        final savedApiKey =
-                            prefs.getString('google_books_api_key')?.trim() ??
-                                '';
-
-                        final List<books_finder.Book> bookSearch =
-                            savedApiKey.isEmpty
-                                ? await books_finder.queryBooks(
-                                    _isbn13Controller.text,
-                                    queryType: books_finder.QueryType.isbn,
-                                    maxResults: 1,
-                                    printType: books_finder.PrintType.books,
-                                    orderBy: books_finder.OrderBy.relevance,
-                                  )
-                                : await books_finder.queryBooks(
-                                    _isbn13Controller.text,
-                                    queryType: books_finder.QueryType.isbn,
-                                    maxResults: 1,
-                                    printType: books_finder.PrintType.books,
-                                    orderBy: books_finder.OrderBy.relevance,
-                                    apiKey: savedApiKey,
-                                  );
-                        // popup to confirm search result is correct
-                        if (bookSearch.isEmpty) {
-                          // no search result found, show snack bar to notify
-                          if (mounted) {
-                            _showSnackBar(
-                                'No books found with that ISBN number.');
-                          }
-                        } else {
-                          var searchResultConfirm = 'No';
-
-                          books_finder.Book bookResult = bookSearch.first;
-
-                          String fullTitle = bookResult.info.title;
-                          if (bookResult.info.subtitle.isNotEmpty)
-                            fullTitle =
-                                '$fullTitle: ${bookResult.info.subtitle}';
-
-                          String allAuthors = bookResult.info.authors
-                              .toString()
-                              .substring(
-                                  1,
-                                  bookResult.info.authors.toString().length -
-                                      1);
-
-                          // search found a result, confirm result is correct
-                          if (mounted) {
-                            searchResultConfirm = await Navigator.of(context)
-                                .push(MaterialPageRoute(
-                              builder: (context) => alertForSearchConfirm(
-                                  fullTitle,
-                                  allAuthors,
-                                  bookResult.info.publisher),
-                            ));
-                          }
-
-                          if (searchResultConfirm == 'No' && mounted) {
-                            // search result is wrong
-                            _showSnackBar(
-                                'Too bad, search result is not the book that we looking for.');
-                          } else {
-                            setState(() {
-                              _titleController.text = fullTitle;
-                              _authorController.text = allAuthors;
-                              _publisherController.text =
-                                  bookResult.info.publisher;
-                            });
-                          }
-                        }
-                      } catch (e, stack) {
-                        logger.e('Error searching book by ISBN',
-                            time: DateTime.now(), error: e, stackTrace: stack);
-
-                        String errorMessageText;
-                        String errorText = e.toString();
-                        final bool isHostLookupError =
-                            errorText.contains('Failed host lookup');
-
-                        if (isHostLookupError) {
-                          errorMessageText =
-                              'Error searching book by ISBN. Please check your internet connection.';
-                        } else {
-                          // try to parse the error message from server response
-                          String? serverMessage;
-
-                          try {
-                            final Map<String, dynamic> parsedError =
-                                jsonDecode(errorText) as Map<String, dynamic>;
-                            serverMessage =
-                                parsedError['error']?['message']?.toString();
-                          } catch (_) {
-                            serverMessage = null;
-                          }
-
-                          errorMessageText = (serverMessage != null &&
-                                  serverMessage.isNotEmpty)
-                              ? 'Error searching book by ISBN.\n\n$serverMessage'
-                              : 'Error searching book by ISBN.';
-                        }
-
-                        _showSnackBar(errorMessageText,
-                            duration: const Duration(seconds: 6));
-                      }
-                    }
-                  },
-                ),
-              ),
+              _buildHeader(),
+              _buildIsbnInputField(),
+              _buildFindBookButton(),
               const Divider(
                 thickness: 2.5,
               ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: TextField(
-                  controller: _titleController,
-                  onChanged: (value) {
-                    // update ui
-                    setState(() {});
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Title',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: _titleController.text.isEmpty
-                        ? null
-                        : IconButton(
-                            icon: const Icon(Icons.clear_sharp),
-                            onPressed: () => _clearTextField(_titleController),
-                          ),
-                    errorText: _validateEmptyTitle
-                        ? "c'mon, there's no books with no title, innit?"
-                        : null,
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.next,
-                  focusNode: _titleFocus,
-                  onEditingComplete: () {
-                    // had to do this coz there's a clear button in between TextField for textInputAction to work properly
-                    logger.d('onEditingComplete title');
-                    // unfocus this title field
-                    _titleFocus.unfocus();
-                    // request to move the focus to author field
-                    FocusScope.of(context).requestFocus(_authorFocus);
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: TextField(
-                  controller: _authorController,
-                  onChanged: (value) {
-                    // update ui
-                    setState(() {});
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Author',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: _authorController.text.isEmpty
-                        ? null
-                        : IconButton(
-                            icon: const Icon(Icons.clear_sharp),
-                            onPressed: () => _clearTextField(_authorController),
-                          ),
-                    errorText: _validateEmptyAuthor
-                        ? "who's the writer? ghost ah?"
-                        : null,
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.next,
-                  focusNode: _authorFocus,
-                  onEditingComplete: () {
-                    // had to do this coz there's a clear button in between TextField for textInputAction to work properly
-                    logger.d('onEditingComplete author');
-                    // unfocus this author field
-                    _authorFocus.unfocus();
-                    // request to move the focus to publisher field
-                    FocusScope.of(context).requestFocus(_publisherFocus);
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: TextField(
-                  controller: _publisherController,
-                  onChanged: (value) {
-                    // update ui
-                    setState(() {});
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Publisher',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: _publisherController.text.isEmpty
-                        ? null
-                        : IconButton(
-                            icon: const Icon(Icons.clear_sharp),
-                            onPressed: () =>
-                                _clearTextField(_publisherController),
-                          ),
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.done,
-                  focusNode: _publisherFocus,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: customBookStatusButton('New Book!', 0, Colors.red),
-                    ),
-                    const SizedBox(
-                      width: 10,
-                    ),
-                    Expanded(
-                      child: customBookStatusButton('Reading', 1, Colors.amber),
-                    ),
-                    const SizedBox(
-                      width: 10,
-                    ),
-                    Expanded(
-                      child:
-                          customBookStatusButton('Finished', 2, Colors.green),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: TextField(
-                  controller: _datePurchaseController,
-                  decoration: const InputDecoration(
-                    icon: Icon(Icons.calendar_today),
-                    labelText: "Date of Purchase",
-                    border: OutlineInputBorder(),
-                  ),
-                  readOnly: true,
-                  onTap: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: _datePurchaseController.text.isNotEmpty
-                          ? DateTime.parse(_datePurchaseController.text)
-                          : DateTime.now(),
-                      firstDate: DateTime(1970),
-                      lastDate: DateTime(2100),
-                    );
-
-                    if (pickedDate != null) {
-                      logger.i(pickedDate.toString());
-                      String formattedDate = _formatDateYmd(
-                          pickedDate); // format date in required form here we use yyyy-MM-dd that means time is removed
-                      logger.d(
-                          formattedDate); //formatted date output using intl.dart package =>  2022-07-04
-
-                      setState(() {
-                        _datePurchaseController.text = formattedDate;
-                      });
-                    } else {
-                      logger.d('Date not selected');
-                    }
-                  },
-                ),
-              ),
-              (_bookStatus ==
-                      2) // show date reading done picker if book status = finished
-                  ? Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: TextField(
-                        controller: _dateReadDoneController,
-                        decoration: const InputDecoration(
-                          icon: Icon(Icons.done_all_sharp),
-                          labelText: "Date Reading Done!",
-                          border: OutlineInputBorder(),
-                        ),
-                        readOnly: true,
-                        onTap: () async {
-                          DateTime? pickedDateDone = await showDatePicker(
-                            context: context,
-                            initialDate: _dateReadDoneController.text.isNotEmpty
-                                ? DateTime.parse(_dateReadDoneController.text)
-                                : DateTime.now(),
-                            firstDate: _datePurchaseController.text.isNotEmpty
-                                ? DateTime.parse(_datePurchaseController.text)
-                                : DateTime(1970),
-                            lastDate: DateTime(2100),
-                          );
-
-                          if (pickedDateDone != null) {
-                            logger.i(pickedDateDone.toString());
-                            String formattedDateDone = _formatDateYmd(
-                                pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
-                            logger.d(
-                                formattedDateDone); //formatted date output using intl.dart package =>  2022-07-04
-
-                            setState(() {
-                              _dateReadDoneController.text = formattedDateDone;
-                            });
-                          } else {
-                            logger.d('Date not selected');
-                          }
-                        },
-                      ),
-                    )
-                  : const SizedBox(
-                      height: 0,
-                    ),
-              (_bookStatus ==
-                      2) // show forgot date reading done button if book status = finished
-                  ? Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(50.0, 10.0, 10.0, 10.0),
-                      child: customForgotFinishedReadDateButton(),
-                    )
-                  : const SizedBox(
-                      height: 0,
-                    ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: ElevatedButton(
-                  onPressed: () async {
-                    // for title entry validation
-                    setState(() {
-                      _validateEmptyTitle = _titleController.text.isEmpty;
-                      _validateEmptyAuthor = _authorController.text.isEmpty;
-                    });
-
-                    // proceed only if all required field is not empty (_validateEmptyTitle & _validateEmptyAuthor = false)
-                    if (!_validateEmptyTitle && !_validateEmptyAuthor) {
-                      // if i forgot date finish is selected
-                      if (_isForgotDateDone) {
-                        _dateReadDoneController.text = '';
-                      } else if ((_bookStatus == 2) &&
-                          _dateReadDoneController.text.isEmpty) {
-                        // if book finished is selected, but date finished is not inputted, auto select today's date
-                        _dateReadDoneController.text =
-                            _autoFilledFinishedDate();
-                        logger.d(
-                            'date finished auto set to ${_dateReadDoneController.text}');
-                      }
-
-                      // save new book
-                      if (widget.id == -1) {
-                        await _addItem();
-                      }
-                      if (widget.id != -1) {
-                        await _updateItem(widget.id, widget.book!);
-                      }
-
-                      if (mounted) {
-                        // give update to user
-                        _showSnackBar((widget.id == -1)
-                            ? "New book '${_titleController.text}' added."
-                            : "Book '${_titleController.text}' is updated.");
-
-                        // close add book screen, and send true to notify home screen that a book has been added/updated to refresh the book list there
-                        Navigator.pop(context, true);
-                      }
-                    }
-                  },
-                  child: Text(widget.id == -1 ? 'Add New Book' : 'Update'),
-                ),
-              ),
+              _buildTitleField(),
+              _buildAuthorField(),
+              _buildPublisherField(),
+              _buildStatusButtonsRow(),
+              _buildPurchaseDateField(),
+              _buildFinishedDateFieldOrPlaceholder(),
+              _buildForgotDateButtonOrPlaceholder(),
+              _buildSubmitButton(),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    // header typography
+    return const Padding(
+      padding: EdgeInsets.only(top: 30.0, bottom: 20.0),
+      child: Text(
+        "Add new book \ninto library.",
+        style: TextStyle(
+          fontSize: 30.0,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIsbnInputField() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10.0, 15.0, 10.0, 10.0),
+      child: TextField(
+        controller: _isbn13Controller,
+        decoration: InputDecoration(
+          labelText: 'ISBN-13 Number',
+          border: const OutlineInputBorder(),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.qr_code_sharp),
+            onPressed: () => barcodeScan(),
+          ),
+        ),
+        keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.done,
+      ),
+    );
+  }
+
+  Widget _buildFindBookButton() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
+      child: ElevatedButton(
+        child: const Text('Find Book'),
+        onPressed: () async {
+          logger.i('_isbnController = ${_isbn13Controller.value}');
+
+          if (_isbn13Controller.text.isEmpty) {
+            // no input, no do search
+            _showSnackBar('No ISBN number entered.');
+          } else {
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              final savedApiKey =
+                  prefs.getString('google_books_api_key')?.trim() ?? '';
+
+              final List<books_finder.Book> bookSearch = savedApiKey.isEmpty
+                  ? await books_finder.queryBooks(
+                      _isbn13Controller.text,
+                      queryType: books_finder.QueryType.isbn,
+                      maxResults: 1,
+                      printType: books_finder.PrintType.books,
+                      orderBy: books_finder.OrderBy.relevance,
+                    )
+                  : await books_finder.queryBooks(
+                      _isbn13Controller.text,
+                      queryType: books_finder.QueryType.isbn,
+                      maxResults: 1,
+                      printType: books_finder.PrintType.books,
+                      orderBy: books_finder.OrderBy.relevance,
+                      apiKey: savedApiKey,
+                    );
+              // popup to confirm search result is correct
+              if (bookSearch.isEmpty) {
+                // no search result found, show snack bar to notify
+                if (mounted) {
+                  _showSnackBar('No books found with that ISBN number.');
+                }
+              } else {
+                var searchResultConfirm = 'No';
+
+                books_finder.Book bookResult = bookSearch.first;
+
+                String fullTitle = bookResult.info.title;
+                if (bookResult.info.subtitle.isNotEmpty) {
+                  fullTitle = '$fullTitle: ${bookResult.info.subtitle}';
+                }
+
+                String allAuthors = bookResult.info.authors
+                    .toString()
+                    .substring(
+                        1, bookResult.info.authors.toString().length - 1);
+
+                // search found a result, confirm result is correct
+                if (mounted) {
+                  searchResultConfirm = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => alertForSearchConfirm(
+                          fullTitle, allAuthors, bookResult.info.publisher),
+                    ),
+                  );
+                }
+
+                if (searchResultConfirm == 'No' && mounted) {
+                  // search result is wrong
+                  _showSnackBar(
+                      'Too bad, search result is not the book that we looking for.');
+                } else {
+                  setState(() {
+                    _titleController.text = fullTitle;
+                    _authorController.text = allAuthors;
+                    _publisherController.text = bookResult.info.publisher;
+                  });
+                }
+              }
+            } catch (e, stack) {
+              logger.e('Error searching book by ISBN',
+                  time: DateTime.now(), error: e, stackTrace: stack);
+
+              String errorMessageText;
+              String errorText = e.toString();
+              final bool isHostLookupError =
+                  errorText.contains('Failed host lookup');
+
+              if (isHostLookupError) {
+                errorMessageText =
+                    'Error searching book by ISBN. Please check your internet connection.';
+              } else {
+                // try to parse the error message from server response
+                String? serverMessage;
+
+                try {
+                  final Map<String, dynamic> parsedError =
+                      jsonDecode(errorText) as Map<String, dynamic>;
+                  serverMessage = parsedError['error']?['message']?.toString();
+                } catch (_) {
+                  serverMessage = null;
+                }
+
+                errorMessageText =
+                    (serverMessage != null && serverMessage.isNotEmpty)
+                        ? 'Error searching book by ISBN.\n\n$serverMessage'
+                        : 'Error searching book by ISBN.';
+              }
+
+              _showSnackBar(errorMessageText,
+                  duration: const Duration(seconds: 6));
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildTitleField() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: TextField(
+        controller: _titleController,
+        onChanged: (value) {
+          // update ui
+          setState(() {});
+        },
+        decoration: InputDecoration(
+          labelText: 'Title',
+          border: const OutlineInputBorder(),
+          suffixIcon: _titleController.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear_sharp),
+                  onPressed: () => _clearTextField(_titleController),
+                ),
+          errorText: _validateEmptyTitle
+              ? "c'mon, there's no books with no title, innit?"
+              : null,
+        ),
+        textCapitalization: TextCapitalization.words,
+        textInputAction: TextInputAction.next,
+        focusNode: _titleFocus,
+        onEditingComplete: () {
+          // had to do this coz there's a clear button in between TextField for textInputAction to work properly
+          logger.d('onEditingComplete title');
+          // unfocus this title field
+          _titleFocus.unfocus();
+          // request to move the focus to author field
+          FocusScope.of(context).requestFocus(_authorFocus);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAuthorField() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: TextField(
+        controller: _authorController,
+        onChanged: (value) {
+          // update ui
+          setState(() {});
+        },
+        decoration: InputDecoration(
+          labelText: 'Author',
+          border: const OutlineInputBorder(),
+          suffixIcon: _authorController.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear_sharp),
+                  onPressed: () => _clearTextField(_authorController),
+                ),
+          errorText:
+              _validateEmptyAuthor ? "who's the writer? ghost ah?" : null,
+        ),
+        textCapitalization: TextCapitalization.words,
+        textInputAction: TextInputAction.next,
+        focusNode: _authorFocus,
+        onEditingComplete: () {
+          // had to do this coz there's a clear button in between TextField for textInputAction to work properly
+          logger.d('onEditingComplete author');
+          // unfocus this author field
+          _authorFocus.unfocus();
+          // request to move the focus to publisher field
+          FocusScope.of(context).requestFocus(_publisherFocus);
+        },
+      ),
+    );
+  }
+
+  Widget _buildPublisherField() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: TextField(
+        controller: _publisherController,
+        onChanged: (value) {
+          // update ui
+          setState(() {});
+        },
+        decoration: InputDecoration(
+          labelText: 'Publisher',
+          border: const OutlineInputBorder(),
+          suffixIcon: _publisherController.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear_sharp),
+                  onPressed: () => _clearTextField(_publisherController),
+                ),
+        ),
+        textCapitalization: TextCapitalization.words,
+        textInputAction: TextInputAction.done,
+        focusNode: _publisherFocus,
+      ),
+    );
+  }
+
+  Widget _buildStatusButtonsRow() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: customBookStatusButton('New Book!', 0, Colors.red),
+          ),
+          const SizedBox(
+            width: 10,
+          ),
+          Expanded(
+            child: customBookStatusButton('Reading', 1, Colors.amber),
+          ),
+          const SizedBox(
+            width: 10,
+          ),
+          Expanded(
+            child: customBookStatusButton('Finished', 2, Colors.green),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPurchaseDateField() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: TextField(
+        controller: _datePurchaseController,
+        decoration: const InputDecoration(
+          icon: Icon(Icons.calendar_today),
+          labelText: "Date of Purchase",
+          border: OutlineInputBorder(),
+        ),
+        readOnly: true,
+        onTap: () async {
+          DateTime? pickedDate = await showDatePicker(
+            context: context,
+            initialDate: _datePurchaseController.text.isNotEmpty
+                ? DateTime.parse(_datePurchaseController.text)
+                : DateTime.now(),
+            firstDate: DateTime(1970),
+            lastDate: DateTime(2100),
+          );
+
+          if (pickedDate != null) {
+            logger.i(pickedDate.toString());
+            String formattedDate = _formatDateYmd(
+                pickedDate); // format date in required form here we use yyyy-MM-dd that means time is removed
+            logger.d(
+                formattedDate); //formatted date output using intl.dart package =>  2022-07-04
+
+            setState(() {
+              _datePurchaseController.text = formattedDate;
+            });
+          } else {
+            logger.d('Date not selected');
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildFinishedDateFieldOrPlaceholder() {
+    if (_bookStatus == 2) {
+      // show date reading done picker if book status = finished
+      return Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: TextField(
+          controller: _dateReadDoneController,
+          decoration: const InputDecoration(
+            icon: Icon(Icons.done_all_sharp),
+            labelText: "Date Reading Done!",
+            border: OutlineInputBorder(),
+          ),
+          readOnly: true,
+          onTap: () async {
+            DateTime? pickedDateDone = await showDatePicker(
+              context: context,
+              initialDate: _dateReadDoneController.text.isNotEmpty
+                  ? DateTime.parse(_dateReadDoneController.text)
+                  : DateTime.now(),
+              firstDate: _datePurchaseController.text.isNotEmpty
+                  ? DateTime.parse(_datePurchaseController.text)
+                  : DateTime(1970),
+              lastDate: DateTime(2100),
+            );
+
+            if (pickedDateDone != null) {
+              logger.i(pickedDateDone.toString());
+              String formattedDateDone = _formatDateYmd(
+                  pickedDateDone); // format date in required form here we use yyyy-MM-dd that means time is removed
+              logger.d(
+                  formattedDateDone); //formatted date output using intl.dart package =>  2022-07-04
+
+              setState(() {
+                _dateReadDoneController.text = formattedDateDone;
+              });
+            } else {
+              logger.d('Date not selected');
+            }
+          },
+        ),
+      );
+    }
+
+    return const SizedBox(
+      height: 0,
+    );
+  }
+
+  Widget _buildForgotDateButtonOrPlaceholder() {
+    if (_bookStatus == 2) {
+      // show forgot date reading done button if book status = finished
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(50.0, 10.0, 10.0, 10.0),
+        child: customForgotFinishedReadDateButton(),
+      );
+    }
+
+    return const SizedBox(
+      height: 0,
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: ElevatedButton(
+        onPressed: () async {
+          // for title entry validation
+          setState(() {
+            _validateEmptyTitle = _titleController.text.isEmpty;
+            _validateEmptyAuthor = _authorController.text.isEmpty;
+          });
+
+          // proceed only if all required field is not empty (_validateEmptyTitle & _validateEmptyAuthor = false)
+          if (!_validateEmptyTitle && !_validateEmptyAuthor) {
+            // if i forgot date finish is selected
+            if (_isForgotDateDone) {
+              _dateReadDoneController.text = '';
+            } else if ((_bookStatus == 2) &&
+                _dateReadDoneController.text.isEmpty) {
+              // if book finished is selected, but date finished is not inputted, auto select today's date
+              _dateReadDoneController.text = _autoFilledFinishedDate();
+              logger.d(
+                  'date finished auto set to ${_dateReadDoneController.text}');
+            }
+
+            // save new book
+            if (widget.id == -1) {
+              await _addItem();
+            }
+            if (widget.id != -1) {
+              await _updateItem(widget.id, widget.book!);
+            }
+
+            if (mounted) {
+              // give update to user
+              _showSnackBar((widget.id == -1)
+                  ? "New book '${_titleController.text}' added."
+                  : "Book '${_titleController.text}' is updated.");
+
+              // close add book screen, and send true to notify home screen that a book has been added/updated to refresh the book list there
+              Navigator.pop(context, true);
+            }
+          }
+        },
+        child: Text(widget.id == -1 ? 'Add New Book' : 'Update'),
       ),
     );
   }
