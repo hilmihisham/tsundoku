@@ -220,6 +220,21 @@ class _AddBookScreen extends State<AddBookScreen> {
     setState(() {});
   }
 
+  void _showSnackBar(String message,
+      {Duration duration = const Duration(seconds: 4)}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: duration,
+        showCloseIcon: true,
+        closeIconColor: Colors.deepOrange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   String _formatDateYmd(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
   }
@@ -387,21 +402,7 @@ class _AddBookScreen extends State<AddBookScreen> {
 
                     if (_isbn13Controller.text.isEmpty) {
                       // no input, no do search
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No ISBN number entered.'),
-                          duration: Duration(seconds: 4),
-                          showCloseIcon: true,
-                          closeIconColor: Colors.deepOrange,
-                          behavior: SnackBarBehavior.floating,
-                          // action: SnackBarAction(
-                          //   label: 'OK',
-                          //   onPressed: () {
-                          //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          //   },
-                          // ),
-                        ),
-                      );
+                      _showSnackBar('No ISBN number entered.');
                     } else {
                       try {
                         final prefs = await SharedPreferences.getInstance();
@@ -437,22 +438,8 @@ class _AddBookScreen extends State<AddBookScreen> {
                         if (bookSearch.isEmpty) {
                           // no search result found, show snack bar to notify
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'No books found with that ISBN number.'),
-                                duration: Duration(seconds: 4),
-                                showCloseIcon: true,
-                                closeIconColor: Colors.deepOrange,
-                                behavior: SnackBarBehavior.floating,
-                                // action: SnackBarAction(
-                                //   label: 'OK',
-                                //   onPressed: () {
-                                //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                //   },
-                                // ),
-                              ),
-                            );
+                            _showSnackBar(
+                                'No books found with that ISBN number.');
                           }
                         } else {
                           var searchResultConfirm = 'No';
@@ -484,22 +471,8 @@ class _AddBookScreen extends State<AddBookScreen> {
 
                           if (searchResultConfirm == 'No' && mounted) {
                             // search result is wrong
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'Too bad, search result is not the book that we looking for.'),
-                                duration: Duration(seconds: 4),
-                                showCloseIcon: true,
-                                closeIconColor: Colors.deepOrange,
-                                behavior: SnackBarBehavior.floating,
-                                // action: SnackBarAction(
-                                //   label: 'OK',
-                                //   onPressed: () {
-                                //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                //   },
-                                // ),
-                              ),
-                            );
+                            _showSnackBar(
+                                'Too bad, search result is not the book that we looking for.');
                           } else {
                             setState(() {
                               _titleController.text = fullTitle;
@@ -540,15 +513,8 @@ class _AddBookScreen extends State<AddBookScreen> {
                               : 'Error searching book by ISBN.';
                         }
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(errorMessageText),
-                            duration: const Duration(seconds: 6),
-                            showCloseIcon: true,
-                            closeIconColor: Colors.deepOrange,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                        _showSnackBar(errorMessageText,
+                            duration: const Duration(seconds: 6));
                       }
                     }
                   },
@@ -798,19 +764,9 @@ class _AddBookScreen extends State<AddBookScreen> {
 
                       if (mounted) {
                         // give update to user
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: (widget.id == -1)
-                                ? Text(
-                                    "New book '${_titleController.text}' added.")
-                                : Text(
-                                    "Book '${_titleController.text}' is updated."),
-                            duration: const Duration(seconds: 4),
-                            showCloseIcon: true,
-                            closeIconColor: Colors.deepOrange,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                        _showSnackBar((widget.id == -1)
+                            ? "New book '${_titleController.text}' added."
+                            : "Book '${_titleController.text}' is updated.");
 
                         // close add book screen, and send true to notify home screen that a book has been added/updated to refresh the book list there
                         Navigator.pop(context, true);
